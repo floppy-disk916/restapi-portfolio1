@@ -1,0 +1,9 @@
+fastapi[standard]
+alembic
+sqlmodel
+pyjwt
+asyncpg
+psycopg[binary]
+redis[hiredis]
+celery
+throttled-py
