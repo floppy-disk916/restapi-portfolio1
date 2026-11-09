@@ -65,6 +65,21 @@ wheels = [
 ]
 
 [[package]]
+name = "alembic-postgresql-enum"
+version = "1.11.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "alembic", version = "1.16.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
+    { name = "alembic", version = "1.20.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
+    { name = "sqlalchemy", version = "2.0.57", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "sqlalchemy", version = "2.1.8", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/4c/95/8aab40c2b867b0bc75fcfe30fd08ebd52f481182b86615e28a73dcab216e/alembic_postgresql_enum-1.11.1.tar.gz", hash = "sha256:66277c112ef86c30c73e06bfb6deedd4cb62ec0a9e6017bcaee0c0d43a085f23", size = 19575, upload-time = "2026-10-27T12:47:37.197Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c0/f1/f68e92516a30c40a094978421c0d83e9006336e517a91f355f5dc157ff8f/alembic_postgresql_enum-1.11.1-py3-none-any.whl", hash = "sha256:25b65578ed862cb2774b0b5d84042f1390f774ad278c4f45bdb2d1b1688008c3", size = 29866, upload-time = "2026-10-27T12:47:36Z" },
+]
+
+[[package]]
 name = "amqp"
 version = "5.3.1"
 source = { registry = "https://pypi.org/simple" }
@@ -2906,6 +2921,7 @@ source = { virtual = "." }
 dependencies = [
     { name = "alembic", version = "1.16.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "alembic", version = "1.20.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
+    { name = "alembic-postgresql-enum" },
     { name = "asyncpg" },
     { name = "celery", version = "5.6.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "celery", version = "5.7.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
@@ -2925,6 +2941,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "alembic", specifier = ">=1.16.5" },
+    { name = "alembic-postgresql-enum", specifier = ">=1.11.1" },
     { name = "asyncpg", specifier = ">=0.32.0" },
     { name = "celery", specifier = ">=5.6.3" },
     { name = "fastapi", extras = ["standard"], specifier = ">=0.128.8" },
