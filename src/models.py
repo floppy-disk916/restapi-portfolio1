@@ -27,11 +27,15 @@ class Item(ItemBase, table=True):
     __tablename__: str = "items"
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
-    name: str
+    name: str = Field(unique=True)
     tags: list[str] = Field(sa_column=Column("tags", ARRAY(String, dimensions=1, zero_indexes=True)))
     description: str
     price: float 
     tax: Optional[float] = Field(default=None)
+
+    __table_args__ = (
+        CheckConstraint("tax < price", name="is_valid_tax"),
+    )
 
 class ItemPublic(BaseModel):
     id: UUID
@@ -58,9 +62,11 @@ class Staff(StaffBase, table=True):
     __tablename__: str = "staffs"
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
-    name: str
+    name: str = Field(unique=True)
     age: int
     role: RoleEnum
-    avg_wage: float
+    avg_wage: float = Field(ge=0)
 
-
+    __table_args__ = (
+        CheckConstraint("avg_wage >= 0", name="is_avg_wage_valid"),
+    )

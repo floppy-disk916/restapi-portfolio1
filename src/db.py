@@ -38,5 +38,6 @@ async_session = async_sessionmaker(engine)
 async def get_async_session() -> AsyncGenerator[AsyncSession]:
     async with async_session() as session:
         yield session
+        session.commit()
 
 ASesDep = Annotated[AsyncSession, Depends(get_async_session)]
