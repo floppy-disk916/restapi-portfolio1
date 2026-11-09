@@ -9,7 +9,7 @@ from fastapi import Depends
 from typing import Annotated
 from collections.abc import AsyncGenerator
 
-dsn = settings.db_dsn
+dsn = str(settings.db_dsn)
 
 #Enable echo and echo_pool for debugging. Default to development mode
 is_echo: bool = True
@@ -27,7 +27,7 @@ engine = create_async_engine(
     echo=is_echo,
     echo_pool=is_echo,
     isolation_level=isolation,
-    pool_pre_pring=True,
+    pool_pre_ping=True,
     pool_size=settings.db_pool_size,
     pool_recycle=per_connection_age,
     max_overflow=settings.db_burst_tolerance,

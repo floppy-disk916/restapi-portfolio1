@@ -1,4 +1,5 @@
 from sqlmodel import SQLModel, Field
+
 from sqlalchemy.schema import Column
 from sqlalchemy import CheckConstraint, MetaData
 from sqlalchemy.types import ARRAY, String, Float
@@ -45,10 +46,13 @@ class ItemPublic(BaseModel):
     price: float
     tax: float
 
-    @model_validator(mode="after")
-    def is_valid_tax(self):
-        if self.tax >= self.price:
-            raise ValidationError("tax must be below price")
+class ItemUpdate(BaseModel):
+    name: Optional[str] = None
+    tags: Optional[list[str]] = None
+    description: Optional[str] = None
+    price: Optional[float] = None
+    tax: Optional[float] = None
+
 
 class StaffBase(SQLModel):
     pass
@@ -70,3 +74,16 @@ class Staff(StaffBase, table=True):
     __table_args__ = (
         CheckConstraint("avg_wage >= 0", name="is_avg_wage_valid"),
     )
+
+class StaffPublic(StaffBase):
+    id: UUID
+    name: str
+    age: int
+    role: RoleEnum
+    avg_wage: float
+
+class StaffUpdate(BaseModel):
+    name: Optional[str] = None
+    age: Optional[int] = None
+    role: Optional[RoleEnum] = None
+    avg_wage: Optional[float] = None

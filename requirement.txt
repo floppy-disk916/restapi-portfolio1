@@ -7,4 +7,5 @@ psycopg[binary]
 redis[hiredis]
 celery
 throttled-py
+greenlet
 alembic-postgresql-enum

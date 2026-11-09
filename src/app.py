@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Request
 from fastapi.templating import Jinja2Templates
+from .routes.item import router as item_router
 
 app = FastAPI()
 template = Jinja2Templates(directory="./src/templates")
@@ -18,8 +19,10 @@ items: list[Item] = [
 ]
 
 
-@app.get("/")
+@app.get("/", include_in_schema=False)
 async def main(request: Request):
     return template.TemplateResponse(
         request=request, name="index.html", context={"items": items}
     )
+
+app.include_router(item_router)
