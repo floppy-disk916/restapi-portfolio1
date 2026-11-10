@@ -1,13 +1,13 @@
 from fastapi import APIRouter, status, HTTPException
-from ..models import Item, ItemPublic, ItemUpdate
+from ..models import Item, ItemPublic, ItemAdd, ItemUpdate
 from ..db import ASesDep
 from typing import Annotated
 
-router = APIRouter(prefix="/item")
+router = APIRouter(tags=["Item Operation"], prefix="/item")
 
 
 @router.post("/")
-async def add_item(item: Item, session: ASesDep) -> ItemPublic:
+async def add_item(item: ItemAdd, session: ASesDep) -> ItemPublic:
     session.add(item)
     return item
 

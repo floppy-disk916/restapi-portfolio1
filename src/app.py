@@ -1,28 +1,43 @@
 from fastapi import FastAPI, Request
 from fastapi.templating import Jinja2Templates
-from .routes.item import router as item_router
+from .routes.api import main_router
 
-app = FastAPI()
-template = Jinja2Templates(directory="./src/templates")
+item_ops_available=5
+staff_ops_available=0
+app_title = "Warehouse Management"
+app_description = "Web application for managing warehouse"
 
-from dataclasses import dataclass
+description = f"""
+# {app_title}
 
-@dataclass
-class Item:
-    name: str
-    description: str
+## Item Operation
 
-items: list[Item] = [
-    Item(name="Jinja2",description="A library used for document templating"),
-    Item(name="FastAPI", description="A backend framework well-known for its speed and simplicity"),
-    Item(name="SQLAlchemy", description="A battle-tested ORM for python backend")
+There are **{item_ops_available} path operations** available for item
+
+## Staff Operation
+
+There are **{staff_ops_available} path operations** available for staff
+"""
+
+tags = [
+    {"name": "Item Operation", "description": "Operations for Item"},
+    {"name": "Staff Operation", "description": "Operations for User"},
 ]
 
+app = FastAPI(
+    description=description,
+    openapi_tags=tags,
+    )
+"""
+template = Jinja2Templates(directory="./src/templates")
 
 @app.get("/", include_in_schema=False)
 async def main(request: Request):
     return template.TemplateResponse(
-        request=request, name="index.html", context={"items": items}
+        request=request, name="index.html", context = {
+            "app_title":app_title,
+            "app_description":app_description
+        },
     )
-
-app.include_router(item_router)
+"""
+app.include_router(main_router)

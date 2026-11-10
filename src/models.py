@@ -31,10 +31,12 @@ class Item(ItemBase, table=True):
     name: str = Field(unique=True)
     tags: list[str] = Field(sa_column=Column("tags", ARRAY(String, dimensions=1, zero_indexes=True)))
     description: str
-    price: float 
-    tax: Optional[float] = Field(default=None)
+    price: float = Field(ge=0)
+    tax: Optional[float] = Field(default=None, ge=0)
 
     __table_args__ = (
+        CheckConstraint("tax >= 0", name="is_pos_tax"),
+        CheckConstraint("price >= 0", name="is_pos_price"),
         CheckConstraint("tax < price", name="is_valid_tax"),
     )
 
@@ -45,6 +47,13 @@ class ItemPublic(BaseModel):
     description: str
     price: float
     tax: float
+
+class ItemAdd(BaseModel):
+    name: str
+    tags: list[str]
+    description: str
+    price: float = Field(ge=0)
+    tax: float = Field(ge=0)
 
 class ItemUpdate(BaseModel):
     name: Optional[str] = None
@@ -67,11 +76,12 @@ class Staff(StaffBase, table=True):
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     name: str = Field(unique=True)
-    age: int
+    age: int = Field(ge=18)
     role: RoleEnum
     avg_wage: float = Field(ge=0)
 
     __table_args__ = (
+        CheckConstraint("age >= 18", name="is_valid_age"),
         CheckConstraint("avg_wage >= 0", name="is_avg_wage_valid"),
     )
 
@@ -81,6 +91,12 @@ class StaffPublic(StaffBase):
     age: int
     role: RoleEnum
     avg_wage: float
+
+class StaffAdd(BaseModel):
+    name: str
+    age: int = Field(ge=18)
+    role: RoleEnum
+    avg_wage: float = Field(ge=0)
 
 class StaffUpdate(BaseModel):
     name: Optional[str] = None
