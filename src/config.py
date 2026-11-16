@@ -32,6 +32,7 @@ class Settings(BaseSettings):
     jwt_public_key: str | None = Field(default=None, alias="PUBLIC_KEY")
     jwt_secret_key: str | None = Field(default=None, alias="SECRET_KEY")
 
+    api_key_expire_day: int | None = Field(alias="API_KEY_EXPIRE_DAY")
     jwt_expire_min: int | None = Field(alias="JWT_EXPIRE_MIN")
 
     @field_validator("jwt_algo", mode="before")

@@ -11,6 +11,7 @@ dependencies = [
     "greenlet>=3.2.5",
     "psycopg[binary]>=3.2.13",
     "pyjwt>=2.15.1",
+    "pytest-asyncio>=1.2.0",
     "redis[hiredis]>=7.0.1",
     "sqlmodel>=0.0.34",
     "throttled-py>=2.2.3",

@@ -4,7 +4,8 @@ from fastapi import (
     HTTPException,
 )
 
-from ..models import Staff, StaffPublic, StaffAdd, StaffUpdate
+from ..models import Staff
+from ..schemas import StaffPublic, StaffAdd, StaffUpdate
 from ..db import ASesDep
 from typing import Annotated
 

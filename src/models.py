@@ -1,4 +1,4 @@
-from sqlmodel import SQLModel, Field
+from sqlmodel import SQLModel, Field, Relationship
 
 from sqlalchemy.schema import Column
 from sqlalchemy import CheckConstraint, MetaData
@@ -6,6 +6,7 @@ from sqlalchemy.types import ARRAY, String, Float
 from pydantic import model_validator, BaseModel, ValidationError
 from uuid import uuid4, UUID
 from enum import Enum
+from datetime import datetime
 
 from typing import Optional
 
@@ -40,29 +41,6 @@ class Item(ItemBase, table=True):
         CheckConstraint("tax < price", name="is_valid_tax"),
     )
 
-class ItemPublic(BaseModel):
-    id: UUID
-    name: str
-    tags: list[str]
-    description: str
-    price: float
-    tax: float
-
-class ItemAdd(BaseModel):
-    name: str
-    tags: list[str]
-    description: str
-    price: float = Field(ge=0)
-    tax: float = Field(ge=0)
-
-class ItemUpdate(BaseModel):
-    name: Optional[str] = None
-    tags: Optional[list[str]] = None
-    description: Optional[str] = None
-    price: Optional[float] = None
-    tax: Optional[float] = None
-
-
 class StaffBase(SQLModel):
     pass
 
@@ -80,26 +58,37 @@ class Staff(StaffBase, table=True):
     role: RoleEnum
     avg_wage: float = Field(ge=0)
 
+    admin: Admin | None = Relationship(back_populates="staff")
+
     __table_args__ = (
         CheckConstraint("age >= 18", name="is_valid_age"),
         CheckConstraint("avg_wage >= 0", name="is_avg_wage_valid"),
     )
 
-class StaffPublic(StaffBase):
-    id: UUID
-    name: str
-    age: int
-    role: RoleEnum
-    avg_wage: float
+class AdminBase(SQLModel):
+    pass
 
-class StaffAdd(BaseModel):
-    name: str
-    age: int = Field(ge=18)
-    role: RoleEnum
-    avg_wage: float = Field(ge=0)
+class Admin(AdminBase, table=True):
+    __tablename__ : str = "admins"
 
-class StaffUpdate(BaseModel):
-    name: Optional[str] = None
-    age: Optional[int] = None
-    role: Optional[RoleEnum] = None
-    avg_wage: Optional[float] = None
+    id: int | None = Field(default = None, primary_key=True)
+    staff_id: UUID | None = Field(default = None, unique=True, foreign_key="staffs.id")    
+    email: str = Field(min_length=10, max_length=25)
+    name: str = Field(min_length=10, max_length=20)
+    password: str
+
+    staff: Staff | None = Relationship(back_populates="admin")
+    api_key: APIKey | None = Relationship(back_populates="admin")
+
+class APIKeyBase(SQLModel):
+    pass
+
+class APIKey(APIKeyBase, table=True):
+    __tablename__: str = "api_keys"
+
+    id: int | None = Field(default = None, primary_key=True)
+    admin_id: int | None = Field(default = None, foreign_key="admins.id")
+    hashed_key: str = Field(unique=True)
+    expire_date: datetime
+
+    admin: list[Admin] | None = Relationship(back_populates="api_key")

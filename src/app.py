@@ -9,6 +9,7 @@ app_description = "Web application for managing warehouse"
 
 description = f"""
 # {app_title}
+{app_description}
 
 ## Item Operation
 
@@ -25,9 +26,10 @@ tags = [
 ]
 
 app = FastAPI(
-    description=description,
     openapi_tags=tags,
-    )
+    description=description,
+)
+
 """
 template = Jinja2Templates(directory="./src/templates")
 
@@ -40,4 +42,5 @@ async def main(request: Request):
         },
     )
 """
+
 app.include_router(main_router)

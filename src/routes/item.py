@@ -1,5 +1,6 @@
 from fastapi import APIRouter, status, HTTPException
-from ..models import Item, ItemPublic, ItemAdd, ItemUpdate
+from ..models import Item
+from ..schemas import ItemPublic, ItemAdd, ItemUpdate
 from ..db import ASesDep
 from typing import Annotated
 
