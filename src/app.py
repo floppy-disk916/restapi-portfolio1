@@ -1,6 +1,9 @@
 from fastapi import FastAPI, Request
 from fastapi.templating import Jinja2Templates
 from .routes.api import main_router
+from .admin import router as admin_router
+
+from contextlib import asynccontextmanager
 
 item_ops_available=5
 staff_ops_available=0
@@ -25,12 +28,18 @@ tags = [
     {"name": "Staff Operation", "description": "Operations for User"},
 ]
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    yield
+
 app = FastAPI(
     openapi_tags=tags,
+    lifespan=lifespan,
     description=description,
 )
 
-"""
+
 template = Jinja2Templates(directory="./src/templates")
 
 @app.get("/", include_in_schema=False)
@@ -41,6 +50,6 @@ async def main(request: Request):
             "app_description":app_description
         },
     )
-"""
 
+app.include_router(admin_router)
 app.include_router(main_router)

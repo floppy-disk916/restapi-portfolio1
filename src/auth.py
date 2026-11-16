@@ -13,6 +13,7 @@ from fastapi import (
 
 from pydantic import ValidationError
 from .db import ASesDep, AsyncSession
+from sqlmodel import select
 from .models import Admin
 from .schemas import Token
 
@@ -48,7 +49,7 @@ def verify_password(password: str, hashed: str):
     return hasher.verify(password, hashed)
 
 async def get_admin(session: AsyncSession username: str, password: str):
-    admin = await session.scalar(Admin).where(Admin.name == username)
+    admin = await select.scalar(Admin).where(Admin.name == username)
     if admin is None and verify_password(password, admin.password) == False:
         return None
     return admin
@@ -63,8 +64,8 @@ async def create_token(username: str, expire_min: timedelta):
         expire = datetime.now(UTC) + timedelta(minutes=10)
 
     payload = {"sub": username, "exp": expire}
-    jwt = jwt.encode(payload, JWT_PRIVATE_KEY, algorithm=JWT_ENCODE)
-    return jwt
+    token = jwt.encode(payload, JWT_PRIVATE_KEY, algorithm=JWT_ENCODE)
+    return token
 
 @router.post("/token")
 async def login(session: ASesDep, form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):

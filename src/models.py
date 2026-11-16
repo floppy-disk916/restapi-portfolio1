@@ -21,10 +21,10 @@ NAMING_CONVENTION = {
 
 SQLModel.metadata = MetaData(naming_convention=NAMING_CONVENTION)
 
-class ItemBase(SQLModel):
+class Base(SQLModel):
     pass
 
-class Item(ItemBase, table=True):
+class Item(Base, table=True):
 
     __tablename__: str = "items"
 
@@ -41,14 +41,11 @@ class Item(ItemBase, table=True):
         CheckConstraint("tax < price", name="is_valid_tax"),
     )
 
-class StaffBase(SQLModel):
-    pass
-
 class RoleEnum(Enum):
     admin = 1
     staff = 2
 
-class Staff(StaffBase, table=True):
+class Staff(Base, table=True):
 
     __tablename__: str = "staffs"
 
@@ -65,10 +62,7 @@ class Staff(StaffBase, table=True):
         CheckConstraint("avg_wage >= 0", name="is_avg_wage_valid"),
     )
 
-class AdminBase(SQLModel):
-    pass
-
-class Admin(AdminBase, table=True):
+class Admin(Base, table=True):
     __tablename__ : str = "admins"
 
     id: int | None = Field(default = None, primary_key=True)
@@ -80,10 +74,7 @@ class Admin(AdminBase, table=True):
     staff: Staff | None = Relationship(back_populates="admin")
     api_key: APIKey | None = Relationship(back_populates="admin")
 
-class APIKeyBase(SQLModel):
-    pass
-
-class APIKey(APIKeyBase, table=True):
+class APIKey(Base, table=True):
     __tablename__: str = "api_keys"
 
     id: int | None = Field(default = None, primary_key=True)
@@ -91,4 +82,4 @@ class APIKey(APIKeyBase, table=True):
     hashed_key: str = Field(unique=True)
     expire_date: datetime
 
-    admin: list[Admin] | None = Relationship(back_populates="api_key")
+    admin: Admin | None = Relationship(back_populates="api_key")

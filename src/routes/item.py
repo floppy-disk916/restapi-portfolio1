@@ -3,25 +3,28 @@ from ..models import Item
 from ..schemas import ItemPublic, ItemAdd, ItemUpdate
 from ..db import ASesDep
 from typing import Annotated
+from sqlmodel import select
 
 router = APIRouter(tags=["Item Operation"], prefix="/item")
 
 
 @router.post("/")
 async def add_item(item: ItemAdd, session: ASesDep) -> ItemPublic:
-    session.add(item)
+    data = item.model_dump()
+    item_db = Item.model_validate(data)
+    session.add(item_db)
     return item
 
 @router.get("/")
 async def get_item(name: str, session: ASesDep) -> ItemPublic:
-    item_db = (await session.scalar(Item).where(Item.name == name))
+    item_db = (await session.scalar(select(Item)))
     if item_db is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
     return item_db
 
 @router.patch("/")
 async def partial_update_item(item: ItemUpdate, name: str, session: ASesDep) -> ItemPublic:
-    item_db = (await session.scalar(Item).where(Item.name == name))
+    item_db = (await select.scalar(select(Item).where(Item.name == name)))
     if item_db is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
     item_data = item.model_dump(exclude_unset=True, exclude_none=True)
@@ -31,7 +34,7 @@ async def partial_update_item(item: ItemUpdate, name: str, session: ASesDep) -> 
 
 @router.put("/")
 async def update_item(item: ItemUpdate, name: str, session: ASesDep) -> ItemPublic:
-    item_db = (await session.scalar(Item).where(Item.name == name))
+    item_db = (await select.scalar(select(Item).where(Item.name == name)))
     if item_db is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
     item_data = item.model_dump()
@@ -42,7 +45,7 @@ async def update_item(item: ItemUpdate, name: str, session: ASesDep) -> ItemPubl
 
 @router.delete("/", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_item(name: str, session: ASesDep):
-    item_db = (await session.scalar(Item).where(Item.name == name))
+    item_db = (await select.scalar(select(Item).where(Item.name == name)))
     if item_db is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
     session.delete(item_db)
