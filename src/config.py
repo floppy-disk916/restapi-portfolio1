@@ -9,6 +9,7 @@ from pydantic import (
     field_validator,
 )
 from pydantic_settings import BaseSettings, SettingsConfigDict
+import codecs
 
 # Application mode
 app_mode = "dev"
@@ -39,13 +40,21 @@ class Settings(BaseSettings):
     api_key_expire_day: int | None = Field(alias="API_KEY_EXPIRE_DAY")
     jwt_expire_min: int | None = Field(alias="JWT_EXPIRE_MIN")
 
+    @field_validator("jwt_private_key","jwt_public_key", mode="before")
+    @classmethod
+    def validate_rsa_key(cls, v):
+        if v is None:
+            return v
+        return codecs.decode(v, 'unicode_escape').replace("\r","")
+
+
     @field_validator("jwt_algo", mode="before")
     @classmethod
     def str_to_list(cls, v):
         if isinstance(v, str):
             result = v.split(",")
             return result
-
+    
     model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", extra="forbid"
     )

@@ -13,6 +13,7 @@ from fastapi.security import (
     OAuth2PasswordBearer,
     OAuth2PasswordRequestForm,
 )
+
 from jwt.exceptions import InvalidTokenError
 from pwdlib import PasswordHash
 from pydantic import ValidationError
@@ -34,7 +35,7 @@ API_KEY_EXPIRE_DAY = settings.api_key_expire_day
 
 router = APIRouter(prefix="/auth")
 
-oauth_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
+oauth_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 api_key_scheme = APIKeyHeader(name="X-API-Key", auto_error=True)
 hasher = PasswordHash.recommended()
 
@@ -62,7 +63,7 @@ async def check_admin(session: AsyncSession, username: str, password: str) -> Ad
 
 
 async def check_current_token(
-    session: ASesDep, token: Annotated[str, Depends(OAuth2PasswordBearer)]
+    session: ASesDep, token: Annotated[str, Depends(oauth_scheme)]
 ) -> Admin:
 
     cred_exc = HTTPException(
@@ -70,7 +71,7 @@ async def check_current_token(
         detail="Invalid credential",
     )
     try:
-        payload = jwt.decode(token, JWT_PRIVATE_KEY, algorithms=JWT_ALGO)
+        payload = jwt.decode(token, JWT_PUBLIC_KEY, algorithms=[*JWT_ALGO])
         username = payload.get("sub")
         if username is None:
             raise cred_exc
@@ -114,14 +115,15 @@ async def create_token(username: str, expire_min: timedelta) -> str:
     return token
 
 
-@router.post("/token")
+@router.post("/login")
 async def login(
     session: ASesDep, form_data: Annotated[OAuth2PasswordRequestForm, Depends()]
 ):
+    #import pdb; pdb.set_trace()
     admin = await check_admin(session, form_data.username, form_data.password)
     if admin is None:
         raise HTTPException(status_code=404, detail="admin not found")
     expire_min = timedelta(minutes=JWT_EXPIRE_MIN)
-    access_token = create_token(form_data.username, expire_min)
+    access_token = await create_token(form_data.username, expire_min)
     token = Token(access_token=access_token, token_type="bearer")
     return token

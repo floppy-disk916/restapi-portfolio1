@@ -1,8 +1,11 @@
-from fastapi import APIRouter, status
+from fastapi import APIRouter, status, Depends
 
 from ..db import ASesDep, get_async_repo
-from ..models import Item
+from ..models import Item, Admin
 from ..schemas import ItemAdd, ItemPublic, ItemUpdate
+from ..auth import check_current_token
+
+from typing import Annotated
 
 router = APIRouter(tags=["Item Operation"], prefix="/item")
 
@@ -11,7 +14,11 @@ Repo = get_async_repo(Item)
 
 
 @router.post("/")
-async def add_item(item: ItemAdd, session: ASesDep) -> ItemPublic:
+async def add_item(
+    item: ItemAdd,
+    session: ASesDep,
+    admin: Annotated[Admin, Depends(check_current_token)],
+) -> ItemPublic:
     return await Repo.create_one(session=session, data=item)
 
 
@@ -33,5 +40,9 @@ async def update_item(item: ItemUpdate, name: str, session: ASesDep) -> ItemPubl
 
 
 @router.delete("/", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_item(name: str, session: ASesDep):
+async def delete_item(
+    name: str,
+    session: ASesDep,
+    admin: Annotated[Admin, Depends(check_current_token)],
+):
     return await Repo.remove_one_by_id(session=session, _id=name, col="name")

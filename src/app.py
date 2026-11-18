@@ -6,6 +6,7 @@ from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 from fastapi.templating import Jinja2Templates
 
+from .auth import router as auth_router
 from .admin import router as admin_router
 from .config import settings
 from .db import (
@@ -135,5 +136,5 @@ async def main(request: Request):
 
 app.include_router(admin_router)
 app.include_router(main_router)
-
+app.include_router(auth_router)
 register_exception_handlers(app)
