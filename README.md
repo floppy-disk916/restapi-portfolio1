@@ -8,8 +8,8 @@ Technologies used :
 # How to run it
 Make sure you already have uv installed
 ```
-git clone https://github.com/floppy-disk916/restapi-portfolio.git
-cd restapi-portfolio
+git clone https://github.com/floppy-disk916/restapi-portfolio1.git
+cd restapi-portfolio1
 ```
 Copy .env.example to .env and fill in your own environment variables
 ```
