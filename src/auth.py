@@ -8,14 +8,15 @@ from fastapi import (
     Depends,
     APIRouter,
     HTTPException,
+    status,
 )
 
 
 from pydantic import ValidationError
 from .db import ASesDep, AsyncSession
 from sqlmodel import select
-from .models import Admin
-from .schemas import Token
+from .models import Admin, APIKey
+from .schemas import Token, AdminPublic
 
 from pwdlib import PasswordHash
 
@@ -48,16 +49,56 @@ def hash_password(password: str):
 def verify_password(password: str, hashed: str):
     return hasher.verify(password, hashed)
 
-async def get_admin(session: AsyncSession username: str, password: str):
-    admin = await select.scalar(Admin).where(Admin.name == username)
+async def get_admin(username: str) -> Admin:
+    admin = await session.scalar(select(Admin).where(Admin.name == username))
+    if admin is None:
+        return None
+    return admin
+
+async def check_admin(session: AsyncSession, username: str, password: str) -> Admin:
+    admin = await get_admin(username)
     if admin is None and verify_password(password, admin.password) == False:
         return None
     return admin
 
-async def check_current_token(session: ASesDep, token: Annotated[str, Depends(OAuth2PasswordBearer)]):
-    
+async def check_current_token(
+    session: ASesDep,
+    token: Annotated[str, Depends(OAuth2PasswordBearer)]
+    ) -> Admin:
 
-async def create_token(username: str, expire_min: timedelta):
+    cred_exc = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credential", headers=message_headers)
+    try:
+        payload = jwt.decode(token, JWT_PRIVATE_KEY, algorithms=JWT_ALGO)
+        username = payload.get("sub")
+        if username is None:
+            raise cred_exc
+        
+    except (InvalidTokenError, ValidationError):
+        raise cred_exc
+ 
+    admin = await get_admin(username)
+    if admin is None:
+        raise cred_exc
+    return admin
+
+import logging
+
+logger = logging.getLogger(__name__)
+
+async def check_api_key(
+    session: ASesDep,
+    key: Annotated[str, Depends(api_key_scheme)],
+) -> str:
+    key_db = await session.scalar(select(APIKey).where(APIKey.key == key))
+
+    if not key_db:
+        logger.error(f"key_db value: {key_db}\nhashed key value: {hashed}")
+        raise HTTPException(status_code=401, detail="Invalid api key")
+    if datetime.now(UTC) >= key_db.expire_date:
+        raise HTTPException(status_code=401, detail="Expired api key")
+    return key
+
+async def create_token(username: str, expire_min: timedelta) -> str:
     if expire_min:
         expire = datetime.now(UTC) + expire_min
     else:
@@ -69,7 +110,7 @@ async def create_token(username: str, expire_min: timedelta):
 
 @router.post("/token")
 async def login(session: ASesDep, form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
-    admin = get_admin(session, form_data.username, form_data.password)
+    admin = await check_admin(session, form_data.username, form_data.password)
     if admin is None:
         raise HTTPException(status_code=404, detail="admin not found")
     expire_min = timedelta(minutes=JWT_EXPIRE_MIN)

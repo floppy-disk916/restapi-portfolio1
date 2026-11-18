@@ -1,1 +1,4 @@
 pyproject configuration, with an async dbapi.
+
+- For every add column with attribute non-nullable, add alter_column with
+  server_default to string "none"

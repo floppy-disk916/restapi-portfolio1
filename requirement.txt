@@ -10,3 +10,4 @@ throttled-py
 greenlet
 alembic-postgresql-enum
 pytest-asyncio
+pwdlib[argon2]

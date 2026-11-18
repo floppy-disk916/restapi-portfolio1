@@ -1,6 +1,7 @@
 [project]
 name = "restapi-learn3"
-version = "0.1.0"
+version = "0.0.1"
+license = { text = "MIT" }
 requires-python = ">=3.9"
 dependencies = [
     "alembic>=1.16.5",
@@ -10,6 +11,7 @@ dependencies = [
     "fastapi[standard]>=0.128.8",
     "greenlet>=3.2.5",
     "psycopg[binary]>=3.2.13",
+    "pwdlib[argon2]>=0.2.1",
     "pyjwt>=2.15.1",
     "pytest-asyncio>=1.2.0",
     "redis[hiredis]>=7.0.1",

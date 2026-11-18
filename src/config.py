@@ -18,7 +18,14 @@ from typing import Annotated, Literal
 app_mode = "dev"
 
 class Settings(BaseSettings):
-    app_name: str = "merely one amongs many application"
+    app_title: str = "merely one amongs many application"
+    app_description: str = "merely a simple description"
+    app_version: str = "0.0.1"
+    license_info: dict = {
+        "name": "MIT License",
+        "identifier": "MIT",
+    }
+    
     mode: Literal["prod", "dev"] = app_mode
 
     db_dsn: PostgresDsn | None = Field(alias="DATABASE_URL")
@@ -48,4 +55,11 @@ class Settings(BaseSettings):
         extra="forbid"
     )
 
-settings = Settings()
+
+app_title="Warehouse Management"
+app_description="Web application for managing warehouse"
+
+settings = Settings(
+    app_title = app_title,
+    app_description = app_description,
+)

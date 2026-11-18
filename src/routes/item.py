@@ -1,52 +1,32 @@
 from fastapi import APIRouter, status, HTTPException
 from ..models import Item
 from ..schemas import ItemPublic, ItemAdd, ItemUpdate
-from ..db import ASesDep
+from ..db import ASesDep, get_async_repo 
 from typing import Annotated
 from sqlmodel import select
 
+
 router = APIRouter(tags=["Item Operation"], prefix="/item")
 
+# Decide what type of model you want for the repository
+Repo = get_async_repo(Item)
 
 @router.post("/")
 async def add_item(item: ItemAdd, session: ASesDep) -> ItemPublic:
-    data = item.model_dump()
-    item_db = Item.model_validate(data)
-    session.add(item_db)
-    return item
+    return await Repo.create_one(session=session, data=item)
 
 @router.get("/")
 async def get_item(name: str, session: ASesDep) -> ItemPublic:
-    item_db = (await session.scalar(select(Item)))
-    if item_db is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
-    return item_db
+    return await Repo.get_one_by_id(session=session, _id=name, col="name")
 
 @router.patch("/")
 async def partial_update_item(item: ItemUpdate, name: str, session: ASesDep) -> ItemPublic:
-    item_db = (await select.scalar(select(Item).where(Item.name == name)))
-    if item_db is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
-    item_data = item.model_dump(exclude_unset=True, exclude_none=True)
-    item_db.sqlmodel_update(item_data)
-    session.add(item_db)
-    return item_db
+    return await Repo.update_one_by_id(session=session, data=item, _id=name, col="name")
 
 @router.put("/")
 async def update_item(item: ItemUpdate, name: str, session: ASesDep) -> ItemPublic:
-    item_db = (await select.scalar(select(Item).where(Item.name == name)))
-    if item_db is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
-    item_data = item.model_dump()
-    item_db.sqlmodel_update(item_data)
-    session.add(item_db)
-    return item_db
-
+    return await Repo.update_one_by_id(session=session, data=item, _id=name, col="name")
 
 @router.delete("/", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_item(name: str, session: ASesDep):
-    item_db = (await select.scalar(select(Item).where(Item.name == name)))
-    if item_db is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
-    session.delete(item_db)
-
+    return await Repo.remove_one_by_id(session=session, _id=name, col="name")

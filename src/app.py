@@ -1,14 +1,25 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, status
+from fastapi.responses import JSONResponse
 from fastapi.templating import Jinja2Templates
 from .routes.api import main_router
 from .admin import router as admin_router
+from .config import settings
+from .db import (
+    FactoryException,
+    factory_code,
+    init_db,
+)
+
+import logging, traceback
 
 from contextlib import asynccontextmanager
 
-item_ops_available=5
-staff_ops_available=0
-app_title = "Warehouse Management"
-app_description = "Web application for managing warehouse"
+license_info = settings.license_info
+app_version = settings.app_version
+app_title = settings.app_title
+app_description = settings.app_description
+item_ops_available = 5
+staff_ops_available = 5
 
 description = f"""
 # {app_title}
@@ -28,15 +39,77 @@ tags = [
     {"name": "Staff Operation", "description": "Operations for User"},
 ]
 
+logger = logging.getLogger(__name__)
+
+def register_exception_handlers(app: FastAPI):
+    @app.exception_handler(FactoryException)
+    async def factory_exc_handler(request: Request, exc: FactoryException):
+        logger.error(
+            "Unhandled error: \n".join(
+                traceback.format_exception(
+                    type(exc),
+                    exc,
+                    exc.__traceback__,
+                )
+            ),
+        )
+
+        logger.error(f"\n\nMessage: {exc.message}\n\n")
+
+        code: int = 0
+        match exc.code:
+            case factory_code.FACTORY_ATTR_ERR | factory_code.FACTORY_MISSING_COL_ERR | factory_code.FACTORY_PARAM_ERR:
+                code = status.HTTP_500_INTERNAL_SERVER_ERROR
+                exc.message = "Internal server error"
+            case factory_code.FACTORY_CONFLICT_ERR:
+                code = status.HTTP_409_CONFLICT    
+                exc.message = "Data conflict"
+            case factory_code.FACTORY_NOT_FOUND_ERR:
+                code = status.HTTP_404_NOT_FOUND
+                exc.message = "Data not found"
+            case factory_code.FACTORY_GENERIC_ERR:
+                code = status.HTTP_500_INTERNAL_SERVER_ERROR
+                exc.message = "Unknown error. Sorry"
+
+        return JSONResponse(
+            status_code=code,
+            content={
+                "code": exc.code,
+                "error": exc.message,
+            }
+        )
+
+    @app.exception_handler(Exception)
+    async def internal_exc_handler(request: Request, exc: Exception):
+        logger.error(
+            "Unhandler error: \n".join(
+                traceback.format_exception(
+                    type(exc),
+                    exc,
+                    exc.__traceback__,
+                )
+            )
+        )
+
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={
+                "error": "Internal server error",
+                "msg": "Something went wrong. Please try again later"
+            }
+        )
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    await init_db()
     yield
 
 app = FastAPI(
     openapi_tags=tags,
     lifespan=lifespan,
     description=description,
+    version=app_version,
+    license_info=license_info,
 )
 
 
@@ -53,3 +126,5 @@ async def main(request: Request):
 
 app.include_router(admin_router)
 app.include_router(main_router)
+
+register_exception_handlers(app)

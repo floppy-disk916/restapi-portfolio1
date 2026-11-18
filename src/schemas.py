@@ -47,3 +47,16 @@ class ItemUpdate(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+
+class AdminPublic(BaseModel):
+    id: int | None = Field(default = None, primary_key=True)
+    staff_id: UUID | None = Field(default = None, unique=True, foreign_key="staffs.id")
+    name: str = Field(min_length=10, max_length=20)
+
+class AdminForm(BaseModel):
+    email: str
+    name: str
+    password: str
+
+class AdminAdd(AdminForm):
+    pass

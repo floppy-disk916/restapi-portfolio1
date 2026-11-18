@@ -1,12 +1,18 @@
 from .config import settings
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
+    AsyncEngine,
     async_sessionmaker,
     create_async_engine,
 )
-from sqlalchemy.exc import IntegrityError
 
-from fastapi import Depends
+from sqlalchemy.exc import (
+    IntegrityError,
+)
+
+from sqlalchemy import select, delete
+
+from fastapi import Depends, HTTPException, status
 from typing import Annotated, Any, TypeAlias
 from collections.abc import AsyncGenerator
 
@@ -14,6 +20,7 @@ from pydantic import BaseModel
 from .models import Base
 
 from uuid import UUID
+from enum import IntEnum
 
 Model: TypeAlias = Base
 Schema: TypeAlias = BaseModel
@@ -42,22 +49,60 @@ engine = create_async_engine(
     max_overflow=settings.db_burst_tolerance,
 )
 
-async_session = async_sessionmaker(engine, expire_on_commit=False)
+async def init_db():
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+async_session = async_sessionmaker(bind=engine, expire_on_commit=False)
 
 async def get_async_session() -> AsyncGenerator[AsyncSession]:
     async with async_session() as session:
         yield session
-        session.commit()
 
 ASesDep = Annotated[AsyncSession, Depends(get_async_session)]
 
-class SchemaException(Exception):
-    pass
+class factory_code(IntEnum):
+    FACTORY_GENERIC_ERR = 0
+    FACTORY_ATTR_ERR = 1
+    FACTORY_CONFLICT_ERR = 2
+    FACTORY_MISSING_COL_ERR = 3
+    FACTORY_NOT_FOUND_ERR = 4
+    FACTORY_PARAM_ERR = 5
+
+class FactoryException(Exception):
+    def __init__(self, message, code):
+        self.code = code
+        self.message = message
+        super().__init__(self.message)
+
+class AttributeException(FactoryException):
+    def __init__(self, message, code=factory_code.FACTORY_ATTR_ERR):
+        super().__init__(message, code)
+
+class ConflictException(FactoryException):
+    def __init__(self, message="Conflict occurred", code=factory_code.FACTORY_CONFLICT_ERR):
+        super().__init__(message, code)
+
+class MissingColException(FactoryException):
+    def __init__(self, message="Missing column", code=factory_code.FACTORY_MISSING_COL_ERR):
+        super().__init__(message, code)
+
+class NotFoundException(FactoryException):
+    def __init__(self, message="Data is not found", code=factory_code.FACTORY_NOT_FOUND_ERR):
+        super().__init__(message, code)
+
+class ParamException(FactoryException):
+    def __init__(self, message="Invalid parameter", code=factory_code.FACTORY_PARAM_ERR):
+        super().__init__(message, code)
+
+
 
 def get_async_repo(model: Model):
     class AsyncRepo():
+        model: Model
+
         @classmethod
-        async def create(
+        async def create_one(
             cls,
             session: AsyncSession,
             data: Schema,
@@ -68,8 +113,10 @@ def get_async_repo(model: Model):
                 await session.commit()
                 await session.refresh(db_model)
                 return db_model
+            except IntegrityError as e:  
+                raise ConflictException(message=f"{e}")
             except Exception as e:
-                raise SchemaException(f"Error occurred: {e}") from e
+                raise FactoryException(code=factory_code.FACTORY_GENERIC_ERR,message=f"{e}") from e
 
         @classmethod
         async def create_many(
@@ -82,8 +129,11 @@ def get_async_repo(model: Model):
             try:
                 session.add_all(db_models)
                 await session.commit()
+
+            except IntegrityError as e:
+                raise ConflictException(message=f"{e}")
             except Exception as e:
-                raise SchemaException(f"Error occurred: {e}") from e
+                raise FactoryException(code=factory_code.FACTORY_GENERIC_ERR, message=f"Error occurred: {e}") from e
 
             if not return_models:
                 return True
@@ -105,7 +155,7 @@ def get_async_repo(model: Model):
             try:
                 query = select(model).where(getattr(model, col) == _id)
             except AttributeError:
-                raise SchemaException(f"Column {col} not found in model {model.__tablename__}")
+                raise AttributeException(message=f"Column {col} not found in model {model.__tablename__}")
 
             if with_for_update:
                 query = query.with_for_update()
@@ -128,7 +178,7 @@ def get_async_repo(model: Model):
                 try:
                     query = query.where(getattr(model, col).in_(ids))
                 except AttributeError:
-                    raise SchemaException(f"Column {col} not found in model {model.__tablename__}")
+                    raise AttributeException(message=f"Column {col} not found in model {model.__tablename__}")
             
             if with_for_update:
                 query = query.with_for_update()
@@ -137,7 +187,7 @@ def get_async_repo(model: Model):
             return results.unique().scalars().all()
 
         @classmethod
-        async def update_by_id(
+        async def update_one_by_id(
             cls,
             session: AsyncSession,
             data: Schema,
@@ -145,12 +195,12 @@ def get_async_repo(model: Model):
             col: str = "uuid",
         ) -> Model:
 
-            db_model = cls.get_one_by_id(
+            db_model = await cls.get_one_by_id(
                 session, _id, col=col, with_for_update=True
             )
 
             if not db_model:
-                raise SchemaException(f"{model.__tablename__} {col} = {_id} not found")
+                raise NotFoundException(message=f"{model.__tablename__} {col} = {_id} not found")
 
             values = data.model_dump(exclude_unset=True)
             for k, v in values.items():
@@ -162,7 +212,7 @@ def get_async_repo(model: Model):
                 return db_model
 
             except IntegrityError:
-                raise SchemaException(f"{model.__tablename__} {col} = {_id} conflicts with existing data")    
+                raise ConflictException(message=f"{model.__tablename__} {col} = {_id} conflicts with existing data")    
 
  
         @classmethod
@@ -174,7 +224,9 @@ def get_async_repo(model: Model):
             return_models: bool = False,
         ) -> list[Model] | bool:
 
+            #dict comprehension
             updates = {str(id): update for id, update in updates.items() if update}
+            
             ids = list(updates.keys())
 
             db_models = await cls.get_many_by_ids(
@@ -183,7 +235,6 @@ def get_async_repo(model: Model):
 
             for db_model in db_models:
                 
-                # WHAT IS THIS?
                 values = updates[str(getattr(db_model, col))].model_dump(exclude_unset=True)
                 for k, v in values.items():
                     setattr(db_model, k, v)
@@ -192,7 +243,7 @@ def get_async_repo(model: Model):
             try:
                 await session.commit()
             except IntegrityError:
-                raise SchemaException(f"{model.__tablename__} conflict with existing data")
+                raise ConflictException(message=f"{model.__tablename__} conflict with existing data")
 
             if not return_models:
                 return True
@@ -202,14 +253,54 @@ def get_async_repo(model: Model):
 
             return db_models
 
-        """
+        
         @classmethod
-        async def remove_by_id(
+        async def remove_one_by_id(
             cls,
+            session: AsyncSession,
+            _id: str | UUID,
+            col: str = "uuid",
+        ) -> int:
+            try:
+                db_model = await session.scalar(select(model).where(getattr(model,col) == _id))
+                if not db_model:
+                    raise NotFoundException(
+                        message=f"Item with id {_id} is not found",
+                    )
 
-        )
-        """
-        #READ lawsontaylor for continuining this
-    
+                query = delete(model).where(getattr(model, col) == _id)
+            except AttributeError:
+                raise MissingColException(
+                    message=f"Column {col} not found on {model.__tablename__}.",
+                )
+        
+            rows = await session.execute(query)
+            await session.commit()
+            return rows.rowcount
+        
+        @classmethod
+        async def remove_many_by_ids(
+            cls,
+            session: AsyncSession,
+            ids: list[str | UUID],
+            col: str = "uuid",
+        ) -> int:
+            
+            if not ids: 
+                raise ParamException(
+                    message=f"No ids provided",
+                )
+
+            try:
+                query = delete(model).where(getattr(model, col).in_(ids))
+            except AttributeError:
+                raise AttributeException(
+                    message=f"Column {col} not found on {model.__tablename__}.",
+                )
+                
+            rows = await session.execute(query)
+            await session.commit()
+            return rows.rowcount
+ 
     AsyncRepo.model = model
     return AsyncRepo

@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 from sqlmodel import SQLModel, Field, Relationship
 
+from sqlalchemy.orm import relationship
 from sqlalchemy.schema import Column
-from sqlalchemy import CheckConstraint, MetaData
+from sqlalchemy import UniqueConstraint, CheckConstraint, MetaData
 from sqlalchemy.types import ARRAY, String, Float
 from pydantic import model_validator, BaseModel, ValidationError
 from uuid import uuid4, UUID
@@ -41,9 +44,9 @@ class Item(Base, table=True):
         CheckConstraint("tax < price", name="is_valid_tax"),
     )
 
-class RoleEnum(Enum):
-    admin = 1
-    staff = 2
+class RoleEnum(str, Enum):
+    admin = "admin"
+    staff = "staff"
 
 class Staff(Base, table=True):
 
@@ -55,12 +58,13 @@ class Staff(Base, table=True):
     role: RoleEnum
     avg_wage: float = Field(ge=0)
 
-    admin: Admin | None = Relationship(back_populates="staff")
+    admin: Admin = Relationship(back_populates="staff")
 
     __table_args__ = (
         CheckConstraint("age >= 18", name="is_valid_age"),
         CheckConstraint("avg_wage >= 0", name="is_avg_wage_valid"),
     )
+
 
 class Admin(Base, table=True):
     __tablename__ : str = "admins"
@@ -71,15 +75,19 @@ class Admin(Base, table=True):
     name: str = Field(min_length=10, max_length=20)
     password: str
 
-    staff: Staff | None = Relationship(back_populates="admin")
-    api_key: APIKey | None = Relationship(back_populates="admin")
+    __table_args__ = (
+        UniqueConstraint("email", name="unique_email"),
+    )
+
+    staff: Staff = Relationship(back_populates="admin")
+    api_key: APIKey = Relationship(back_populates="admin")
 
 class APIKey(Base, table=True):
     __tablename__: str = "api_keys"
 
     id: int | None = Field(default = None, primary_key=True)
     admin_id: int | None = Field(default = None, foreign_key="admins.id")
-    hashed_key: str = Field(unique=True)
+    key: str = Field(nullable=True)
     expire_date: datetime
 
-    admin: Admin | None = Relationship(back_populates="api_key")
+    admin: Admin = Relationship(back_populates="api_key")
