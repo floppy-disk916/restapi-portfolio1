@@ -184,6 +184,7 @@ def get_async_repo(model: Model):
                 query = query.with_for_update()
 
             results = await session.execute(query)
+
             return results.unique().scalar_one_or_none()
 
         @classmethod

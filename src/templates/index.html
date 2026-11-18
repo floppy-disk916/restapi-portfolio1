@@ -17,9 +17,9 @@
         }
         
     </style>
-
+    <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.11/dist/htmx.min.js" integrity="sha384-2OatzQy1H+Zd/IIrjr1TcuDGqLXeHhbooAyJY1KdQMKnr4LZ22k31GBLdYKHmVjg" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/htmx-ext-response-targets@2.0.4" integrity="sha384-T41oglUPvXLGBVyRdZsVRxNWnOOqCynaPubjUVjxhsjFTKrFJGEMm3/0KGmNQ+Pg" crossorigin="anonymous"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@6.0.0-alpha.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-B/GM4XqrwHnWXNOWMbloTmrYXZg10cakYGmpfsR/bbzQ6JAJI4ihuyADKLnBgrCe" crossorigin="anonymous">
-    <script src="./htmx.min.js"></script>
 </head>
 <body>
 
@@ -27,19 +27,13 @@
 
     <div class="md:container">
         <div class="nav">
-            <a class="nav-link" href="localhost:8000/">Home</a>
+            <a class="nav-link" href="/">Home</a>
             <a role="button" class="nav-link" data-bs-toggle="menu" href="#">Docs</a>
             <div class="menu">
-                <a class="menu-item" href="#">User</a>
-                <div class="submenu">
-                    <a class="menu-item" data-bs-toggle="menu" role="button" href="#">Dev</a>
-                    <div class="menu">
-                        <a class="menu-item" href="#">Internal</a>
-                        <a class="menu-item" href="#">High level</a>
-                    </div>
-                </div>
+                <a class="menu-item" href="/docs/user">User</a>
+                <a class="menu-item" href="/docs/dev">Dev</a>
             </div>
-            <a class="nav-link" href="#">About</a>
+            <a class="nav-link" href="/about">About</a>
         </div>
     </div>
 
@@ -51,10 +45,23 @@
 
     <div class="container d-flex flex-row flex-start flex-wrap m-10 w-15 gap-5">
         <div class="card hover-lift">
-            <div class="card-body">
+            <div 
+            class="card-body"
+            hx-ext="response-targets"    
+            >
                 <h2 class="card-title">Get Item</h2>
-                <label for="formControlTest" class="form-label">Name</label>
-                <input hx-get="/api/v1/item" type="text" class="form-control" id="formControlTest" placeholder="Fardan">
+                <form
+                    hx-get="/api/v1/item"
+                    hx-target="#item-result"
+                    hx-target-error="#any-error"
+                    hx-swap="beforeend"
+                >
+                    <p class="bg-solid theme-primary"><strong id="item-result">Result</strong></p>
+                    <label for="itemNameInput" class="form-label">Name</label>
+                    <input id="itemNameInput" name="name" type="text" class="form-control"
+                    placeholder="Type an item name and Enter..."/>
+                    <div class="fw-bold m-2" id="any-error"></div>
+                </form>
             </div>
         </div>
     </div>

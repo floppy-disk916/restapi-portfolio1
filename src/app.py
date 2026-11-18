@@ -119,6 +119,7 @@ app = FastAPI(
     description=description,
     version=app_version,
     license_info=license_info,
+    openapi_url=settings.openapi_url,
 )
 
 
@@ -133,7 +134,7 @@ async def main(request: Request):
         context={"app_title": app_title, "app_description": app_description},
     )
 
-
+app.frontend("/", directory="dist", fallback="404.html")
 app.include_router(admin_router)
 app.include_router(main_router)
 app.include_router(auth_router)

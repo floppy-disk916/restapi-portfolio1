@@ -57,7 +57,7 @@ async def get_admin(session: AsyncSession, username: str) -> Admin:
 
 async def check_admin(session: AsyncSession, username: str, password: str) -> Admin:
     admin = await get_admin(session, username)
-    if admin is None and verify_password(password, admin.password) == False:
+    if admin is None or verify_password(password, admin.password) == False:
         return None
     return admin
 

@@ -1,5 +1,11 @@
-from fastapi import APIRouter, status, Depends
+from fastapi import (
+    APIRouter,
+    status, 
+    Depends,
+    HTTPException,
+)
 
+from fastapi.responses import HTMLResponse
 from ..db import ASesDep, get_async_repo
 from ..models import Item, Admin
 from ..schemas import ItemAdd, ItemPublic, ItemUpdate
@@ -24,7 +30,10 @@ async def add_item(
 
 @router.get("/")
 async def get_item(name: str, session: ASesDep) -> ItemPublic:
-    return await Repo.get_one_by_id(session=session, _id=name, col="name")
+    item_db = await Repo.get_one_by_id(session=session, _id=name, col="name")
+    if item_db is None:
+        raise HTTPException(status_code=404)
+    return item_db
 
 
 @router.patch("/")

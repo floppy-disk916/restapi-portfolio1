@@ -24,7 +24,8 @@ class Settings(BaseSettings):
         "identifier": "MIT",
     }
 
-    mode: Literal["prod", "dev"] = app_mode
+    mode: Literal["prod", "dev"] = "dev"
+    openapi_url: str = Field(default="/openapi.json", alias="OPENAPI_URL")
 
     db_dsn: PostgresDsn | None = Field(alias="DATABASE_URL")
     db_pool_size: int = Field(ge=10, default=10)
