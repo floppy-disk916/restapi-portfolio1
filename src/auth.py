@@ -33,7 +33,7 @@ JWT_EXPIRE_MIN = settings.jwt_expire_min
 API_KEY_EXPIRE_DAY = settings.api_key_expire_day
 
 
-router = APIRouter(prefix="/auth")
+router = APIRouter(prefix="/auth", include_in_schema=False)
 
 oauth_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 api_key_scheme = APIKeyHeader(name="X-API-Key", auto_error=True)
