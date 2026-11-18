@@ -1,38 +1,40 @@
-from fastapi import APIRouter, Depends, Request, Form
-from fastapi.templating import Jinja2Templates
-from typing import Annotated
-
-from .db import ASesDep, get_async_repo
-from .auth import check_current_token, hash_password
-from .models import Admin, APIKey
-from .schemas import AdminAdd, AdminForm, AdminPublic
-from .config import settings
-
 import secrets
 import string
-from datetime import datetime, UTC, timedelta
+from datetime import UTC, datetime, timedelta
+from typing import Annotated
+
+from fastapi import APIRouter, Form, Request
+from fastapi.templating import Jinja2Templates
+
+from .auth import hash_password
+from .config import settings
+from .db import ASesDep, get_async_repo
+from .models import Admin, APIKey
+from .schemas import AdminForm
 
 router = APIRouter(prefix="/admin", include_in_schema=False)
 templates = Jinja2Templates(directory="./src/templates")
 
+
 @router.get("/")
 async def main_page(request: Request):
-    return templates.TemplateResponse(
-        request=request, name="admin.html"
-    )
+    return templates.TemplateResponse(request=request, name="admin.html")
+
 
 AdminRepo = get_async_repo(Admin)
 APIKeyRepo = get_async_repo(APIKey)
+
 
 def generate_api_key(length: int = 32) -> str:
     alphabets = string.ascii_letters + string.digits
     return "".join(secrets.choice(alphabets) for _ in range(length))
 
+
 @router.post("/register")
 async def get_api_key(
     session: ASesDep,
     data: Annotated[AdminForm, Form()],
-    ) -> str:
+) -> str:
 
     data.password = hash_password(data.password)
 
@@ -41,7 +43,6 @@ async def get_api_key(
     expire_date = datetime.now(UTC) + timedelta(days=settings.api_key_expire_day)
     if settings.api_key_expire_day:
         expire_date = datetime.now(UTC) + timedelta(days=30)
-
 
     admin = await AdminRepo.create_one(
         session=session,
@@ -60,6 +61,7 @@ async def get_api_key(
     )
 
     return key
+
 
 """
 @router.post("/register")

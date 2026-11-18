@@ -1,21 +1,18 @@
-from pydantic_settings import SettingsConfigDict, BaseSettings
+from __future__ import annotations
+
+from typing import Literal
+
 from pydantic import (
-    ValidationError,
     Field,
-    BaseModel,
     PostgresDsn,
-    MySQLDsn,
-    CockroachDsn,
     RedisDsn,
-    AmqpDsn,
-    BeforeValidator,
     field_validator,
 )
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from typing import Annotated, Literal
-
-#Application mode
+# Application mode
 app_mode = "dev"
+
 
 class Settings(BaseSettings):
     app_title: str = "merely one amongs many application"
@@ -25,7 +22,7 @@ class Settings(BaseSettings):
         "name": "MIT License",
         "identifier": "MIT",
     }
-    
+
     mode: Literal["prod", "dev"] = app_mode
 
     db_dsn: PostgresDsn | None = Field(alias="DATABASE_URL")
@@ -33,7 +30,7 @@ class Settings(BaseSettings):
     db_burst_tolerance: int = Field(default=15)
 
     redis_dsn: RedisDsn | None = Field(default=None, alias="REDIS_URL")
-    
+
     jwt_algo: list[str] | None = Field(default=None, alias="JWT_ALGO")
     jwt_private_key: str | None = Field(default=None, alias="PRIVATE_KEY")
     jwt_public_key: str | None = Field(default=None, alias="PUBLIC_KEY")
@@ -48,18 +45,16 @@ class Settings(BaseSettings):
         if isinstance(v, str):
             result = v.split(",")
             return result
-    
+
     model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        extra="forbid"
+        env_file=".env", env_file_encoding="utf-8", extra="forbid"
     )
 
 
-app_title="Warehouse Management"
-app_description="Web application for managing warehouse"
+app_title = "Warehouse Management"
+app_description = "Web application for managing warehouse"
 
 settings = Settings(
-    app_title = app_title,
-    app_description = app_description,
+    app_title=app_title,
+    app_description=app_description,
 )

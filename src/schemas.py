@@ -1,7 +1,11 @@
-from pydantic import BaseModel, Field
-from typing import Optional
+from __future__ import annotations
+
 from uuid import UUID
+
+from pydantic import BaseModel, Field
+
 from .models import RoleEnum
+
 
 class StaffAdd(BaseModel):
     name: str
@@ -9,11 +13,13 @@ class StaffAdd(BaseModel):
     role: RoleEnum
     avg_wage: float = Field(ge=0)
 
+
 class StaffUpdate(BaseModel):
-    name: Optional[str] = None
-    age: Optional[int] = None
-    role: Optional[RoleEnum] = None
-    avg_wage: Optional[float] = None
+    name: str | None = None
+    age: int | None = None
+    role: RoleEnum | None = None
+    avg_wage: float | None = None
+
 
 class StaffPublic(BaseModel):
     id: UUID
@@ -21,6 +27,7 @@ class StaffPublic(BaseModel):
     age: int
     role: RoleEnum
     avg_wage: float
+
 
 class ItemPublic(BaseModel):
     id: UUID
@@ -30,6 +37,7 @@ class ItemPublic(BaseModel):
     price: float
     tax: float
 
+
 class ItemAdd(BaseModel):
     name: str
     tags: list[str]
@@ -37,26 +45,31 @@ class ItemAdd(BaseModel):
     price: float = Field(ge=0)
     tax: float = Field(ge=0)
 
+
 class ItemUpdate(BaseModel):
-    name: Optional[str] = None
-    tags: Optional[list[str]] = None
-    description: Optional[str] = None
-    price: Optional[float] = None
-    tax: Optional[float] = None
+    name: str | None = None
+    tags: list[str] | None = None
+    description: str | None = None
+    price: float | None = None
+    tax: float | None = None
+
 
 class Token(BaseModel):
     access_token: str
     token_type: str
 
+
 class AdminPublic(BaseModel):
-    id: int | None = Field(default = None, primary_key=True)
-    staff_id: UUID | None = Field(default = None, unique=True, foreign_key="staffs.id")
+    id: int | None = Field(default=None, primary_key=True)
+    staff_id: UUID | None = Field(default=None, unique=True, foreign_key="staffs.id")
     name: str = Field(min_length=10, max_length=20)
+
 
 class AdminForm(BaseModel):
     email: str
     name: str
     password: str
+
 
 class AdminAdd(AdminForm):
     pass

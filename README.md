@@ -1,1 +1,20 @@
-# restapi-portfolio1
+# Restapi-Portfolio1
+
+Technologies used :
+- FastAPI with API key header authentication
+- SQLAlchemy with PostgreSQL dialect
+- Alembic migration
+
+# How to run it
+Make sure you already have uv installed
+```
+git clone https://github.com/floppy-disk916/restapi-portfolio.git
+cd restapi-portfolio
+```
+Copy .env.example to .env and fill in your own environment variables
+```
+cp .env.example .env
+uv sync
+uv run alembic upgrade head
+uv run fastapi run
+```
