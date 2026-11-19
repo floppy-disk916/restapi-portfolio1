@@ -115,6 +115,23 @@ class ParamException(FactoryException):
 
 def get_async_repo(model: Model):
     class AsyncRepo:
+        """
+        AsyncRepo
+
+        It has :
+        1. create_one
+        2. create_many
+        3. get_one_by_id
+        4. get_many_by_ids
+        5. update_one_by_id
+        6. update_many_by_ids
+        7. remove_one_by_id
+        8. remove_many_by_ids
+
+        Bug: All update methods permanently update to the database
+
+        """
+
         model: Model
 
         @classmethod
@@ -126,8 +143,8 @@ def get_async_repo(model: Model):
             try:
                 db_model = model(**data.model_dump())
                 session.add(db_model)
-                await session.commit()
-                await session.refresh(db_model)
+                #await session.commit()
+                #await session.refresh(db_model)
                 return db_model
             except IntegrityError as e:
                 raise ConflictException(message=f"{e}")
@@ -146,7 +163,7 @@ def get_async_repo(model: Model):
             db_models = [model(**data.model_dump()) for data in data_list]
             try:
                 session.add_all(db_models)
-                await session.commit()
+                #await session.commit()
 
             except IntegrityError as e:
                 raise ConflictException(message=f"{e}")
@@ -159,8 +176,8 @@ def get_async_repo(model: Model):
             if not return_models:
                 return True
 
-            for m in db_models:
-                await session.refresh(m)
+            #for m in db_models:
+            #    await session.refresh(m)
 
             return db_models
 
@@ -308,7 +325,7 @@ def get_async_repo(model: Model):
                 )
 
             rows = await session.execute(query)
-            await session.commit()
+            #await session.commit()
             return rows.rowcount
 
         @classmethod
@@ -332,7 +349,7 @@ def get_async_repo(model: Model):
                 )
 
             rows = await session.execute(query)
-            await session.commit()
+            #await session.commit()
             return rows.rowcount
 
     AsyncRepo.model = model

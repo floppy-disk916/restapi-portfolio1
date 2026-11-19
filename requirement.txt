@@ -9,5 +9,7 @@ redis[hiredis]
 celery
 greenlet
 alembic-postgresql-enum
+pytest
+httpx
 pytest-asyncio
 pwdlib[argon2]

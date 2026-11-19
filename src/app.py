@@ -93,7 +93,7 @@ def register_exception_handlers(app: FastAPI):
     @app.exception_handler(Exception)
     async def internal_exc_handler(request: Request, exc: Exception):
         logger.error(
-            "Unhandler error: \n".join(
+            "Unhandled error: \n".join(
                 traceback.format_exception(
                     type(exc),
                     exc,

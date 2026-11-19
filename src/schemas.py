@@ -60,8 +60,8 @@ class Token(BaseModel):
 
 
 class AdminPublic(BaseModel):
-    id: int | None = Field(default=None, primary_key=True)
-    staff_id: UUID | None = Field(default=None, unique=True, foreign_key="staffs.id")
+    id: int
+    staff_id: UUID
     name: str = Field(min_length=10, max_length=20)
 
 

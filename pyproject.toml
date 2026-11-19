@@ -13,9 +13,11 @@ dependencies = [
     "drogue[fastapi]>=0.4.1",
     "fastapi[standard]>=0.128.8",
     "greenlet>=3.2.5",
+    "httpx>=0.28.1",
     "psycopg[binary]>=3.2.13",
     "pwdlib[argon2]>=0.2.1",
     "pyjwt[crypto]>=2.15.1",
+    "pytest>=9.2.0",
     "pytest-asyncio>=1.2.0",
     "redis[hiredis]>=7.0.1",
     "slowapi>=0.1.10",
@@ -25,6 +27,14 @@ dependencies = [
 
 [tool.fastapi]
 entrypoint="src.app:app"
+
+[tool.pytest]
+minversion = "9.0"
+addopts = ["-ra", "-q"]
+testpaths = [
+    "tests",
+]
+asyncio_default_fixture_loop_scope = "session"
 
 [tool.alembic]
 
