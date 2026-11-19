@@ -1,4 +1,5 @@
 fastapi[standard]
+drogue[fastapi]
 alembic
 sqlmodel
 pyjwt[crypto]
@@ -6,7 +7,6 @@ asyncpg
 psycopg[binary]
 redis[hiredis]
 celery
-throttled-py
 greenlet
 alembic-postgresql-enum
 pytest-asyncio

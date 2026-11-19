@@ -6,6 +6,7 @@ from fastapi import (
     APIRouter,
     Depends,
     HTTPException,
+    Request,
     status,
 )
 from fastapi.security import (
@@ -13,7 +14,6 @@ from fastapi.security import (
     OAuth2PasswordBearer,
     OAuth2PasswordRequestForm,
 )
-
 from jwt.exceptions import InvalidTokenError
 from pwdlib import PasswordHash
 from pydantic import ValidationError
@@ -85,11 +85,6 @@ async def check_current_token(
     return admin
 
 
-import logging
-
-logger = logging.getLogger(__name__)
-
-
 async def check_api_key(
     session: ASesDep,
     key: Annotated[str, Depends(api_key_scheme)],
@@ -97,7 +92,6 @@ async def check_api_key(
     key_db = await session.scalar(select(APIKey).where(APIKey.key == key))
 
     if not key_db:
-        logger.error(f"key_db value: {key_db}\nhashed key value: {key}")
         raise HTTPException(status_code=401, detail="Invalid api key")
     if datetime.now(UTC) >= key_db.expire_date:
         raise HTTPException(status_code=401, detail="Expired api key")
@@ -117,9 +111,10 @@ async def create_token(username: str, expire_min: timedelta) -> str:
 
 @router.post("/login")
 async def login(
-    session: ASesDep, form_data: Annotated[OAuth2PasswordRequestForm, Depends()]
+    session: ASesDep,
+    request: Request,
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
 ):
-    #import pdb; pdb.set_trace()
     admin = await check_admin(session, form_data.username, form_data.password)
     if admin is None:
         raise HTTPException(status_code=404, detail="admin not found")

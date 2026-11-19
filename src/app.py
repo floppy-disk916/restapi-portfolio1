@@ -2,12 +2,16 @@ import logging
 import traceback
 from contextlib import asynccontextmanager
 
+from drogue.adapters.fastapi import DrogueLimiter
+from .libfix.drogue_extractors import FixedUserExtractor
+
+from drogue.core.rules.rule import AlgorithmType, RateLimitRule
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 from fastapi.templating import Jinja2Templates
 
-from .auth import router as auth_router
 from .admin import router as admin_router
+from .auth import router as auth_router
 from .config import settings
 from .db import (
     FactoryException,
@@ -122,6 +126,25 @@ app = FastAPI(
     openapi_url=settings.openapi_url,
 )
 
+gcra_rule = RateLimitRule(
+    limit=100,
+    window=60,
+    algorithm=AlgorithmType.GCRA,
+    block=False,
+    timeout=None,
+    shadow=False,
+)
+GLOBAL_LIMITS = ["100/minute"]
+GLOBAL_RULES = [gcra_rule]
+
+limiter = DrogueLimiter(
+    app=app,
+    rules=GLOBAL_RULES,
+    key_func=FixedUserExtractor(),
+    default_limits=GLOBAL_LIMITS,
+)
+
+limited = limiter.limit
 
 template = Jinja2Templates(directory="./src/templates")
 
@@ -133,6 +156,7 @@ async def main(request: Request):
         name="index.html",
         context={"app_title": app_title, "app_description": app_description},
     )
+
 
 app.frontend("/", directory="dist", fallback="404.html")
 app.include_router(admin_router)
