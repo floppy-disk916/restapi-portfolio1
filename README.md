@@ -16,4 +16,4 @@ Copy .env.example to .env and fill in your own environment variables
 cp .env.example .env
 docker compose up -d
 ```
-Then access [Link Text](https://localhost)
+Then access [localhost](https://localhost)
