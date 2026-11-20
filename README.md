@@ -14,7 +14,5 @@ cd restapi-portfolio1
 Copy .env.example to .env and fill in your own environment variables
 ```
 cp .env.example .env
-uv sync
-uv run alembic upgrade head
-uv run fastapi run
+
 ```
