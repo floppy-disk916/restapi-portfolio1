@@ -6,7 +6,7 @@ Technologies used :
 - Alembic migration
 
 # How to run it
-Make sure you already have uv installed
+Make sure you already have uv and docker installed
 ```
 git clone https://github.com/floppy-disk916/restapi-portfolio1.git
 cd restapi-portfolio1
@@ -14,5 +14,6 @@ cd restapi-portfolio1
 Copy .env.example to .env and fill in your own environment variables
 ```
 cp .env.example .env
-
+docker compose up -d
 ```
+Then access [Link Text](https://localhost)
