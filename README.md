@@ -1,19 +1,20 @@
 # Restapi-Portfolio1
 
-Technologies used :
-- FastAPI with API key header authentication
-- SQLAlchemy with PostgreSQL dialect
-- Alembic migration
+A FastAPI REST API portfolio project with API key header authentication.
 
-# How to run it
-Make sure you already have uv and docker installed
-```
+## Technologies
+
+- FastAPI with API key header authentication
+- SQLAlchemy + PostgreSQL
+- Alembic migrations
+- Redis
+- Docker Compose + Caddy (reverse proxy)
+
+## How to run
+
+Make sure you have Docker and Docker Compose installed.
+
+```bash
 git clone https://github.com/floppy-disk916/restapi-portfolio1.git
 cd restapi-portfolio1
-```
-Copy .env.example to .env and fill in your own environment variables
-```
 cp .env.example .env
-docker compose up -d
-```
-Then access [http://localhost](http://localhost)
