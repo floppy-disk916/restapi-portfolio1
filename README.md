@@ -14,13 +14,10 @@ A FastAPI REST API portfolio project with API key header authentication.
 
 Make sure you have Docker and Docker Compose installed.
 
-```bash
+```
 git clone https://github.com/floppy-disk916/restapi-portfolio1.git
 cd restapi-portfolio1
 cp .env.example .env
 
 docker compose up --build --detach
-
-To destroy the compose
-```bash
-docker compose down
+```
