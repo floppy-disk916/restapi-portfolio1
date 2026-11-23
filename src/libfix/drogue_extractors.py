@@ -4,6 +4,7 @@ from typing import Any
 
 from drogue.core.abstracts import IdentityExtractor
 
+
 class FixedUserExtractor(IdentityExtractor):
     """Extract rate limit key by authenticated user ID. Fixed"""
 

@@ -3,14 +3,15 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, status
 
 from ..auth import check_api_key
-from ..db import ASesDep, get_async_repo
+from ..db import ASesDep
 from ..models import Staff
+from ..repository import get_async_repo
 from ..schemas import StaffAdd, StaffPublic, StaffUpdate
 
 router = APIRouter(tags=["Staff Operation"], prefix="/staff")
 
 # Decide what type of model you want for the repository
-Repo = get_async_repo(Staff)
+Repo = get_async_repo(Staff, StaffPublic)
 
 
 @router.post("/")

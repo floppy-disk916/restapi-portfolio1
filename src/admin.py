@@ -8,7 +8,8 @@ from fastapi.templating import Jinja2Templates
 
 from .auth import hash_password
 from .config import settings
-from .db import ASesDep, get_async_repo
+from .db import ASesDep
+from .repository import get_async_repo
 from .models import Admin, APIKey
 from .schemas import AdminForm
 
@@ -21,8 +22,8 @@ async def main_page(request: Request):
     return templates.TemplateResponse(request=request, name="admin.html")
 
 
-AdminRepo = get_async_repo(Admin)
-APIKeyRepo = get_async_repo(APIKey)
+AdminRepo = get_async_repo(Admin, Admin)
+APIKeyRepo = get_async_repo(APIKey, APIKey)
 
 
 def generate_api_key(length: int = 32) -> str:
@@ -41,7 +42,7 @@ async def get_api_key(
     key: str = generate_api_key()
 
     expire_date = datetime.now(UTC) + timedelta(days=settings.api_key_expire_day)
-    if settings.api_key_expire_day:
+    if not settings.api_key_expire_day:
         expire_date = datetime.now(UTC) + timedelta(days=30)
 
     admin = await AdminRepo.create_one(

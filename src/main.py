@@ -3,10 +3,8 @@ import traceback
 from contextlib import asynccontextmanager
 
 from drogue.adapters.fastapi import DrogueLimiter
-from .libfix.drogue_extractors import FixedUserExtractor
-
 from drogue.core.rules.rule import AlgorithmType, RateLimitRule
-from fastapi import FastAPI, Request, status
+from fastapi import FastAPI, Request, status, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.templating import Jinja2Templates
 
@@ -14,10 +12,16 @@ from .admin import router as admin_router
 from .auth import router as auth_router
 from .config import settings
 from .db import (
-    FactoryException,
-    factory_code,
     init_db,
+    destroy_db,
 )
+
+from .libfix.drogue_extractors import FixedUserExtractor
+from .repository import (
+    RepositoryException,
+    repository_code,
+)
+
 from .routes.api import main_router
 
 license_info = settings.license_info
@@ -48,11 +52,37 @@ tags = [
 logger = logging.getLogger(__name__)
 
 
+def convert_repo_code(repo_code: int) -> int:
+    match repo_code:
+        case repository_code.REPOSITORY_GENERIC_ERR:
+            return status.HTTP_500_INTERNAL_SERVER_ERROR
+        case repository_code.REPOSITORY_INTERNAL_ERR:
+            return status.HTTP_500_INTERNAL_SERVER_ERROR
+        case repository_code.REPOSITORY_CONFLICT_ERR:
+            return status.HTTP_409_CONFLICT
+        case repository_code.REPOSITORY_MISSING_COL_ERR:
+            return status.HTTP_500_INTERNAL_SERVER_ERROR
+        case repository_code.REPOSITORY_NOT_FOUND_ERR:
+            return status.HTTP_404_NOT_FOUND
+        case repository_code.REPOSITORY_PARAM_ERR:
+            return status.HTTP_500_INTERNAL_SERVER_ERROR
+
+def get_json_error_message(code: int) -> str:
+    match code:
+        case status.HTTP_500_INTERNAL_SERVER_ERROR:
+            return "Internal server error. Try again later"
+        case status.HTTP_409_CONFLICT:
+            return "Data conflict"
+        case status.HTTP_404_NOT_FOUND:
+            return "Data not found"
+
 def register_exception_handlers(app: FastAPI):
-    @app.exception_handler(FactoryException)
-    async def factory_exc_handler(request: Request, exc: FactoryException):
+    @app.exception_handler(RepositoryException)
+    async def repository_exc_handler(request: Request, exc: RepositoryException):
+        
+        logger.error("\t\t========== Unhandled Error ==========\n\n")
         logger.error(
-            "Unhandled error: \n".join(
+            "\n".join(
                 traceback.format_exception(
                     type(exc),
                     exc,
@@ -60,62 +90,42 @@ def register_exception_handlers(app: FastAPI):
                 )
             ),
         )
-
+        
         logger.error(f"\n\nMessage: {exc.message}\n\n")
-
-        code: int = 0
-        match exc.code:
-            case (
-                factory_code.FACTORY_ATTR_ERR
-                | factory_code.FACTORY_MISSING_COL_ERR
-                | factory_code.FACTORY_PARAM_ERR
-            ):
-                code = status.HTTP_500_INTERNAL_SERVER_ERROR
-                exc.message = "Internal server error"
-            case factory_code.FACTORY_CONFLICT_ERR:
-                code = status.HTTP_409_CONFLICT
-                exc.message = "Data conflict"
-            case factory_code.FACTORY_NOT_FOUND_ERR:
-                code = status.HTTP_404_NOT_FOUND
-                exc.message = "Data not found"
-            case factory_code.FACTORY_GENERIC_ERR:
-                code = status.HTTP_500_INTERNAL_SERVER_ERROR
-                exc.message = "Unknown error. Sorry"
+        
+        code = convert_repo_code(exc.code)
+        msg = get_json_error_message(code)
 
         return JSONResponse(
             status_code=code,
             content={
-                "code": exc.code,
-                "error": exc.message,
-            },
+                "msg": ""
+            }
         )
 
     @app.exception_handler(Exception)
     async def internal_exc_handler(request: Request, exc: Exception):
+        logger.error("\t\t========== Unhandled Error ==========\n\n")
         logger.error(
-            "Unhandled error: \n".join(
+            "\n".join(
                 traceback.format_exception(
                     type(exc),
                     exc,
                     exc.__traceback__,
                 )
-            )
+            ),
         )
-
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={
-                "error": "Internal server error",
-                "msg": "Something went wrong. Please try again later",
-            },
-        )
-
+                "msg": "Internal server error. Try again later",
+            }
+        ) 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
     yield
-
 
 app = FastAPI(
     openapi_tags=tags,

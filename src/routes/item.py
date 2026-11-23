@@ -8,17 +8,18 @@ from fastapi import (
 )
 
 from ..auth import check_current_token
-from ..db import ASesDep, get_async_repo
+from ..db import ASesDep
 from ..models import Admin, Item
+from ..repository import get_async_repo
 from ..schemas import ItemAdd, ItemPublic, ItemUpdate
 
 router = APIRouter(tags=["Item Operation"], prefix="/item")
 
 # Decide what type of model you want for the repository
-Repo = get_async_repo(Item)
+Repo = get_async_repo(Item, ItemPublic)
 
 
-@router.post("/")
+@router.post("/", status_code=status.HTTP_201_CREATED)
 async def add_item(
     item: ItemAdd,
     session: ASesDep,

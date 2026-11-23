@@ -71,8 +71,8 @@ class Admin(Base, table=True):
 
     id: int | None = Field(default=None, primary_key=True)
     staff_id: UUID | None = Field(default=None, unique=True, foreign_key="staffs.id")
-    email: str = Field(min_length=10, max_length=25)
-    name: str = Field(min_length=10, max_length=20)
+    email: str = Field(min_length=1, max_length=25)
+    name: str = Field(min_length=1, max_length=20)
     password: str
 
     __table_args__ = (UniqueConstraint("email", name="unique_email"),)
