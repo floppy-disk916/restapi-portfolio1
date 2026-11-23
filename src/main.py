@@ -4,9 +4,11 @@ from contextlib import asynccontextmanager
 
 from drogue.adapters.fastapi import DrogueLimiter
 from drogue.core.rules.rule import AlgorithmType, RateLimitRule
+
 from fastapi import FastAPI, Request, status, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.templating import Jinja2Templates
+from fastapi.middleware.cors import CORSMiddleware
 
 from .admin import router as admin_router
 from .auth import router as auth_router
@@ -79,19 +81,8 @@ def get_json_error_message(code: int) -> str:
 def register_exception_handlers(app: FastAPI):
     @app.exception_handler(RepositoryException)
     async def repository_exc_handler(request: Request, exc: RepositoryException):
-        
-        logger.error("\t\t========== Unhandled Error ==========\n\n")
-        logger.error(
-            "\n".join(
-                traceback.format_exception(
-                    type(exc),
-                    exc,
-                    exc.__traceback__,
-                )
-            ),
-        )
-        
-        logger.error(f"\n\nMessage: {exc.message}\n\n")
+       
+        logger.error(f"[Repository Error Message]: {exc.message}")
         
         code = convert_repo_code(exc.code)
         msg = get_json_error_message(code)
@@ -99,7 +90,7 @@ def register_exception_handlers(app: FastAPI):
         return JSONResponse(
             status_code=code,
             content={
-                "msg": ""
+                "msg": f"{msg}",
             }
         )
 
@@ -167,9 +158,26 @@ async def main(request: Request):
         context={"app_title": app_title, "app_description": app_description},
     )
 
+origins = [
+    "http://localhost:8000",
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "http://localhost:443",
+    "http://localhost:80",
+]
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origin_regex=r"https?://localhost(:\d+)?$",
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.frontend("/", directory="dist", fallback="404.html")
 app.include_router(admin_router)
 app.include_router(main_router)
 app.include_router(auth_router)
+
 register_exception_handlers(app)

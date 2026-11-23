@@ -8,7 +8,7 @@ services:
     build: .
     environment:
       - REDIS_URL= ${REDIS_URL}
-      - DATABASE_URL= ${DATABASE_URL}
+      - DATABASE_URL= ${DOCKER_DB_URL}
       - PUBLIC_KEY=${PUBLIC_KEY}
       - PRIVATE_KEY=${PRIVATE_KEY}
       - SECRET_KEY=${SECRET_KEY}
@@ -16,6 +16,7 @@ services:
       - JWT_EXPIRE_MIN=${JWT_EXPIRE_MIN}
       - API_KEY_EXPIRE_DAY=${API_KEY_EXPIRE_DAY}
       - OPENAPI_URL=${OPENAPI_URL}
+
     depends_on:
       database:
         condition: service_healthy  

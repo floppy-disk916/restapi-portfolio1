@@ -51,10 +51,9 @@
             >
                 <h2 class="card-title">Get Item</h2>
                 <form
-                    hx-get="/api/v1/item"
+                    hx-get="/api/v1/item/"
                     hx-target="#item-result"
                     hx-target-error="#any-error"
-                    hx-swap="beforeend"
                 >
                     <p class="bg-solid theme-primary"><strong id="item-result">Result</strong></p>
                     <label for="itemNameInput" class="form-label">Name</label>
