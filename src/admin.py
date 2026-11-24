@@ -9,8 +9,8 @@ from fastapi.templating import Jinja2Templates
 from .auth import hash_password
 from .config import settings
 from .db import ASesDep
-from .repository import get_async_repo
 from .models import Admin, APIKey
+from .repository import get_async_repo
 from .schemas import AdminForm
 
 router = APIRouter(prefix="/admin", include_in_schema=False)
@@ -22,8 +22,8 @@ async def main_page(request: Request):
     return templates.TemplateResponse(request=request, name="admin.html")
 
 
-AdminRepo = get_async_repo(Admin, Admin)
-APIKeyRepo = get_async_repo(APIKey, APIKey)
+AdminRepo = get_async_repo(Admin, Admin, child_model="api_key")
+APIKeyRepo = get_async_repo(APIKey, APIKey, child_model="admin")
 
 
 def generate_api_key(length: int = 32) -> str:

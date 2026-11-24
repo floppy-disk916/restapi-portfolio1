@@ -71,7 +71,7 @@ async def check_current_token(
         detail="Invalid credential",
     )
     try:
-        payload = jwt.decode(token, JWT_PUBLIC_KEY, algorithms=[*JWT_ALGO])
+        payload = jwt.decode(token, JWT_PUBLIC_KEY, algorithms=JWT_ALGO)
         username = payload.get("sub")
         if username is None:
             raise cred_exc

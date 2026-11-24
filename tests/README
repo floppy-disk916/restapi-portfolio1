@@ -1,0 +1,4 @@
+
+The Test Suite are made so that after every test, the database is in clean slate
+
+Warning: all repository bulk methods aren't tested yet

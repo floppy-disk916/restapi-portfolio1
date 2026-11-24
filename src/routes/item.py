@@ -40,7 +40,7 @@ async def get_item(name: str, session: ASesDep) -> ItemPublic:
 async def partial_update_item(
     item: ItemUpdate, name: str, session: ASesDep
 ) -> ItemPublic:
-    return await Repo.update_one_by_id(session=session, data=item, _id=name, col="name")
+    return await Repo.patch_one_by_id(session=session, data=item, _id=name, col="name")
 
 
 @router.put("/")

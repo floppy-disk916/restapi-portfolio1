@@ -77,8 +77,8 @@ class Admin(Base, table=True):
 
     __table_args__ = (UniqueConstraint("email", name="unique_email"),)
 
-    staff: Staff = Relationship(back_populates="admin")
-    api_key: APIKey = Relationship(back_populates="admin")
+    staff: Staff = Relationship(back_populates="admin",)
+    api_keys: list[APIKey] = Relationship(back_populates="admin", cascade_delete=True)
 
 
 class APIKey(Base, table=True):

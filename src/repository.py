@@ -3,14 +3,24 @@ from enum import IntEnum
 from typing import TypeAlias
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import (
+    BaseModel,
+    ValidationError,
+)
+
 from sqlalchemy import (
     delete,
     select,
     update,
 )
+from sqlalchemy.exc import (
+    IntegrityError,
+)
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
+)
+from sqlalchemy.orm import (
+    selectinload,
 )
 
 from .models import SQLModel
@@ -26,6 +36,7 @@ class repository_code(IntEnum):
     REPOSITORY_MISSING_COL_ERR = 3
     REPOSITORY_NOT_FOUND_ERR = 4
     REPOSITORY_PARAM_ERR = 5
+    REPOSITORY_NOT_IMPLEMENTED_ERR = 6
 
 
 class RepositoryException(Exception):
@@ -66,6 +77,14 @@ class ParamException(RepositoryException):
         self, message="Invalid parameter", code=repository_code.REPOSITORY_PARAM_ERR
     ):
         super().__init__(message, code)
+
+class NotImplementedException(RepositoryException):
+    def __init__(
+        self, message="Not implemented yet",
+        code=repository_code.REPOSITORY_NOT_IMPLEMENTED_ERR,
+    ):
+        super().__init__(message, code)
+
 
 class BaseRepo(ABC):
     """
@@ -116,7 +135,7 @@ class BaseRepo(ABC):
         cls,
         session: AsyncSession,
         _id: str | UUID,
-        col: str = "uuid",
+        col: str = "id",
         with_for_update: bool = False,
     ) -> Schema:
         ...
@@ -127,7 +146,7 @@ class BaseRepo(ABC):
         cls,
         session: AsyncSession,
         ids: list[str | UUID],
-        col: str = "uuid",
+        col: str = "id",
         with_for_update: bool = False,
     ) -> list[Schema]:
         ...
@@ -139,7 +158,7 @@ class BaseRepo(ABC):
         session: AsyncSession,
         data: Schema,
         _id: str | UUID,
-        col: str = "uuid",
+        col: str = "id",
         with_for_update: bool = False,
     ) -> Schema:
         ...
@@ -159,7 +178,7 @@ class BaseRepo(ABC):
         cls,
         session: AsyncSession,
         _id: str | UUID,
-        col: str = "uuid",
+        col: str = "id",
     ) -> int:
         ...
 
@@ -169,11 +188,11 @@ class BaseRepo(ABC):
         cls,
         session: AsyncSession,
         ids: list[str | UUID],
-        col: str = "uuid",
+        col: str = "id",
     ) -> int:
         ...
 
-def get_async_repo(model: Model, public_schema: Schema):
+def get_async_repo(model: Model, public_schema: Schema, child_model: str | None = None):
     class AsyncRepo(BaseRepo):
         """
         Repository class in asynchronous style
@@ -181,6 +200,7 @@ def get_async_repo(model: Model, public_schema: Schema):
         """
         model: Model = None
         public_schema: Schema = None
+        child_model: str | None = None
         
         @classmethod
         async def create_one(
@@ -202,8 +222,13 @@ def get_async_repo(model: Model, public_schema: Schema):
             @return: public_schema
             """
 
-            db_data = model.model_validate(data.model_dump())
-            session.add(db_data)
+            try:
+                db_data = model.model_validate(data.model_dump())
+                session.add(db_data)
+                await session.commit()
+            except IntegrityError:
+                raise ConflictException() 
+            
             return db_data
 
         @classmethod
@@ -233,9 +258,13 @@ def get_async_repo(model: Model, public_schema: Schema):
             for d in data:
                 db_data.append(model.model_validate(d.model_dump()))
 
-            session.add_all(db_data)
-            
-            for d in data:
+            try:
+                session.add_all(db_data)
+                await session.commit()
+            except IntegrityError:
+                raise ConflictException()
+
+            for d in db_data:
                 await session.refresh(d)
 
             return db_data
@@ -256,7 +285,7 @@ def get_async_repo(model: Model, public_schema: Schema):
             cls,
             session: AsyncSession,
             _id: str | UUID,
-            col: str = "uuid",
+            col: str = "id",
             with_for_update: bool = False,
         ) -> public_schema:
             """
@@ -283,6 +312,12 @@ def get_async_repo(model: Model, public_schema: Schema):
             try:
                 where_filter = (getattr(model, col) == _id)
                 query = select(model).where(where_filter)
+                if child_model:
+                    query = query.options(selectinload(getattr(model, child_model)))
+
+                if with_for_update:
+                    query = query.with_for_update()
+
             except AttributeError:
                 raise InternalException()
             
@@ -299,7 +334,7 @@ def get_async_repo(model: Model, public_schema: Schema):
             cls,
             session: AsyncSession,
             ids: list[str | UUID],
-            col: str = "uuid",
+            col: str = "id",
             with_for_update: bool = False,
         ) -> list[public_schema]:
             """
@@ -327,11 +362,14 @@ def get_async_repo(model: Model, public_schema: Schema):
             try:
                 where_filter = (getattr(model, col).in_(ids))
                 query = select(model).where(where_filter)
+                if child_model:
+                    query = query.options(selectinload(getattr(model, child_model)))
+
             except AttributeError:
                 raise InternalException()
 
             if with_for_update:
-                query.with_for_update()
+                query = query.with_for_update()
 
             results = await session.execute(query)
             db_data = results.scalars().unique().all()
@@ -339,6 +377,57 @@ def get_async_repo(model: Model, public_schema: Schema):
                 raise NotFoundException(message="Not found any")
 
             return db_data
+        
+        @classmethod
+        async def patch_one_by_id(
+            cls,
+            session: AsyncSession,
+            _id: str | UUID,
+            data: Schema,
+            col: str = "id",
+        ) -> public_schema:
+            """
+            Patching one data by id
+            
+            @param session:
+                The ORM Session for the given request. Meant to be taken from Depends()
+            @type session: AsyncSession
+            
+            @param data:
+                The new data
+            @type data: any Schema related to the model
+
+            @param col:
+                The column of the id identifier
+            @type col: str
+
+            @param _id:
+                The identifier value of the data
+            @type _id: str or UUID
+            
+
+            @return: public_schema
+            """               
+            
+            db_data = await cls.get_one_by_id(
+                session=session,
+                col=col,
+                _id=_id,
+                with_for_update=True,
+            )
+            
+            try:
+                updates = data.model_dump(exclude_unset=True)
+                for k, v in updates.items():
+                    setattr(db_data, k, v)
+            except AttributeError:
+                raise InternalException()
+
+            session.add(db_data) 
+            await session.commit()
+            await session.refresh(db_data)
+            return db_data
+
 
         @classmethod
         async def update_one_by_id(
@@ -346,7 +435,7 @@ def get_async_repo(model: Model, public_schema: Schema):
             session: AsyncSession,
             _id: str | UUID,
             data: Schema,
-            col: str = "uuid",
+            col: str = "id",
         ) -> public_schema:
             """
             Updating one data by id
@@ -378,11 +467,17 @@ def get_async_repo(model: Model, public_schema: Schema):
                 with_for_update=True,
             )
             
-            new_data = model.model_valiate(data.model_dump(exclude_unset=True))
-            for k, v in new_data.items():
-                setattr(db_data, k, v)
+            try:
+                updates = data.model_dump()
+                for k, v in updates.items():
+                    setattr(db_data, k, v)
             
+            except AttributeError:
+                raise InternalException()
+
             session.add(db_data) 
+            await session.commit()
+            await session.refresh(db_data)
             return db_data
 
         @classmethod
@@ -399,29 +494,34 @@ def get_async_repo(model: Model, public_schema: Schema):
             @type session: AsyncSession
             
             @param data:
-                All of the new data
+                All of the new data with id included each
             @type data: a list of any Schema related to the model
  
 
             @return: a list of public_schema
             """    
             
+            raise NotImplementedException()
+
             if not data:
                 raise ParamException()
 
+            new_data = [d.model_dump() for d in data]
+
             results = await session.execute(
                 update(model),
-                data,
+                data
             )
             
-            return results.scalars().unique().all()
+            await session.commit()
+            return None
             
         @classmethod
         async def remove_one_by_id(
             cls,
             session: AsyncSession,
             _id: str | UUID,
-            col: str = "uuid",
+            col: str = "id",
         ) -> int:
             """
             Removing one data by id
@@ -450,6 +550,11 @@ def get_async_repo(model: Model, public_schema: Schema):
 
             result = await session.execute(query)
             
+            await session.commit()
+
+            if result.rowcount == 0:
+                raise NotFoundException()
+            
             return result.rowcount
 
         @classmethod
@@ -457,7 +562,7 @@ def get_async_repo(model: Model, public_schema: Schema):
             cls,
             session: AsyncSession,
             ids: list[str | UUID],
-            col: str = "uuid",
+            col: str = "id",
         ) -> int:
             """
             Removing many data by id
@@ -485,10 +590,16 @@ def get_async_repo(model: Model, public_schema: Schema):
                 raise InternalException()
             
             result = await session.execute(query)
-
+            
+            await session.commit()
+            
+            if result.rowcount == 0:
+                raise NotFoundException()
+            
             return result.rowcount
 
     AsyncRepo.model = model
     AsyncRepo.public_schema = public_schema
+    AsyncRepo.child_model = child_model
     return AsyncRepo
 

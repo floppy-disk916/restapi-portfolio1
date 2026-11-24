@@ -14,6 +14,7 @@ dependencies = [
     "fastapi[standard]>=0.128.8",
     "greenlet>=3.2.5",
     "httpx>=0.28.1",
+    "locust>=2.46.0",
     "psycopg[binary]>=3.2.13",
     "pwdlib[argon2]>=0.2.1",
     "pyjwt[crypto]>=2.15.1",
@@ -34,7 +35,7 @@ addopts = ["-ra", "-q"]
 testpaths = [
     "tests",
 ]
-asyncio_default_fixture_loop_scope = "session"
+asyncio_default_fixture_loop_scope = "module"
 
 [tool.alembic]
 

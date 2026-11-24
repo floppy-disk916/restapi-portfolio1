@@ -3,8 +3,8 @@ from __future__ import annotations
 from collections.abc import AsyncGenerator
 from typing import Annotated
 
-from sqlalchemy import insert, select, delete
 from fastapi import Depends
+from sqlalchemy import delete, insert, select
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
     async_sessionmaker,
@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import (
 )
 
 from .config import settings
-from .models import Base, Admin
+from .models import Admin, Base
 
 dsn = str(settings.db_dsn)
 
@@ -53,9 +53,7 @@ async def insert_test_admin():
         admin = await conn.scalar(
             select(Admin).where(
                 Admin.name == "admin",
-                Admin.password == "admin",
-                Admin.email == "admin",
-                ),
+            ),
         )
 
         if admin is None:
@@ -90,8 +88,7 @@ async_session = async_sessionmaker(bind=engine, expire_on_commit=False)
 async def get_async_session() -> AsyncGenerator[AsyncSession]:
     async with async_session() as session:
         yield session
-        yield session.commit()
-    
+        await session.commit()
 
 ASesDep = Annotated[AsyncSession, Depends(get_async_session)]
 

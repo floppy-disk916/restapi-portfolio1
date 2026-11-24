@@ -54,6 +54,7 @@ class Settings(BaseSettings):
         if isinstance(v, str):
             result = v.split(",")
             return result
+        return v
 
     model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", extra="ignore"

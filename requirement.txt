@@ -1,5 +1,5 @@
 fastapi[standard]
-drogue[fastapi]
+slowapi
 alembic
 sqlmodel
 pyjwt[crypto]
@@ -13,3 +13,5 @@ pytest
 httpx
 pytest-asyncio
 pwdlib[argon2]
+locust
+

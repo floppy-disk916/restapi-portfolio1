@@ -1,30 +1,30 @@
+
 import logging
 import traceback
 from contextlib import asynccontextmanager
 
-from drogue.adapters.fastapi import DrogueLimiter
-from drogue.core.rules.rule import AlgorithmType, RateLimitRule
-
-from fastapi import FastAPI, Request, status, HTTPException
+from fastapi import FastAPI, Request, status
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.templating import Jinja2Templates
-from fastapi.middleware.cors import CORSMiddleware
+
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.middleware import SlowAPIMiddleware
+from slowapi.errors import RateLimitExceeded
 
 from .admin import router as admin_router
 from .auth import router as auth_router
 from .config import settings
 from .db import (
     init_db,
-    destroy_db,
 )
-
-from .libfix.drogue_extractors import FixedUserExtractor
 from .repository import (
     RepositoryException,
     repository_code,
 )
-
 from .routes.api import main_router
+
 
 license_info = settings.license_info
 app_version = settings.app_version
@@ -113,6 +113,8 @@ def register_exception_handlers(app: FastAPI):
             }
         ) 
 
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
@@ -127,25 +129,21 @@ app = FastAPI(
     openapi_url=settings.openapi_url,
 )
 
-gcra_rule = RateLimitRule(
-    limit=100,
-    window=60,
-    algorithm=AlgorithmType.GCRA,
-    block=False,
-    timeout=None,
-    shadow=False,
-)
+
 GLOBAL_LIMITS = ["100/minute"]
-GLOBAL_RULES = [gcra_rule]
+REDIS_DSN = str(settings.redis_dsn)
 
-limiter = DrogueLimiter(
-    app=app,
-    rules=GLOBAL_RULES,
-    key_func=FixedUserExtractor(),
+limiter = Limiter(
+    key_func=get_remote_address, 
     default_limits=GLOBAL_LIMITS,
+    storage_uri=REDIS_DSN,
 )
 
-limited = limiter.limit
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
+
+
 
 template = Jinja2Templates(directory="./src/templates")
 
@@ -175,7 +173,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.frontend("/", directory="dist", fallback="404.html")
+
+from pathlib import Path
+
+path = Path(".")
+dist_path = path / "dist"
+
+if dist_path.exists():
+    app.frontend("/", directory="dist", fallback="404.html")
+
 app.include_router(admin_router)
 app.include_router(main_router)
 app.include_router(auth_router)
