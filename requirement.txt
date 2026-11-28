@@ -1,7 +1,13 @@
 fastapi[standard]
+opentelemetry-api
+opentelemetry-sdk
+opentelemetry-instrumentation-fastapi
+opentelemetry-instrumentation-sqlalchemy
+opentelemetry-exporter-otlp
 slowapi
 alembic
 sqlmodel
+sqlalchemy<=2.1.0
 pyjwt[crypto]
 asyncpg
 psycopg[binary]

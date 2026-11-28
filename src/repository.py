@@ -221,13 +221,12 @@ def get_async_repo(model: Model, public_schema: Schema, child_model: str | None 
             
             @return: public_schema
             """
-
             try:
-                db_data = model.model_validate(data.model_dump())
+                db_data = model.model_validate(data.model_dump(exclude_unset=True))
                 session.add(db_data)
                 await session.commit()
-            except IntegrityError:
-                raise ConflictException() 
+            except IntegrityError as e:
+                raise InternalException(f"{e.__cause__}") 
             
             return db_data
 
@@ -261,8 +260,8 @@ def get_async_repo(model: Model, public_schema: Schema, child_model: str | None 
             try:
                 session.add_all(db_data)
                 await session.commit()
-            except IntegrityError:
-                raise ConflictException()
+            except IntegrityError as e:
+                raise InternalException(f"{e.__cause__}")
 
             for d in db_data:
                 await session.refresh(d)
@@ -318,8 +317,8 @@ def get_async_repo(model: Model, public_schema: Schema, child_model: str | None 
                 if with_for_update:
                     query = query.with_for_update()
 
-            except AttributeError:
-                raise InternalException()
+            except AttributeError as e:
+                raise InternalException(f"{e.__cause__}")
             
             db_data = await session.scalar(query)
 
@@ -365,8 +364,8 @@ def get_async_repo(model: Model, public_schema: Schema, child_model: str | None 
                 if child_model:
                     query = query.options(selectinload(getattr(model, child_model)))
 
-            except AttributeError:
-                raise InternalException()
+            except AttributeError as e:
+                raise InternalException(f"{e.__cause__}")
 
             if with_for_update:
                 query = query.with_for_update()
@@ -420,8 +419,8 @@ def get_async_repo(model: Model, public_schema: Schema, child_model: str | None 
                 updates = data.model_dump(exclude_unset=True)
                 for k, v in updates.items():
                     setattr(db_data, k, v)
-            except AttributeError:
-                raise InternalException()
+            except AttributeError as e:
+                raise InternalException(f"{e.__cause__}")
 
             session.add(db_data) 
             await session.commit()
@@ -471,9 +470,9 @@ def get_async_repo(model: Model, public_schema: Schema, child_model: str | None 
                 updates = data.model_dump()
                 for k, v in updates.items():
                     setattr(db_data, k, v)
-            
-            except AttributeError:
-                raise InternalException()
+
+            except (AttributeError, IntegrityError) as e:
+                raise InternalException(f"{e.__cause__}")
 
             session.add(db_data) 
             await session.commit()
@@ -545,8 +544,8 @@ def get_async_repo(model: Model, public_schema: Schema, child_model: str | None 
             try:
                 where_filter = (getattr(model, col) == _id)
                 query = delete(model).where(where_filter)
-            except AttributeError:
-                raise InternalException()
+            except AttributeError as e:
+                raise InternalException(f"{e.__cause__}")
 
             result = await session.execute(query)
             
@@ -586,8 +585,8 @@ def get_async_repo(model: Model, public_schema: Schema, child_model: str | None 
             try:
                 where_filter = (getattr(model, col).in_(ids))
                 query = delete(model).where(where_filter)
-            except AttributeError:
-                raise InternalException()
+            except AttributeError as e:
+                raise InternalException(f"{e.__cause__}")
             
             result = await session.execute(query)
             

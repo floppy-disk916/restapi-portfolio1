@@ -22,7 +22,8 @@ services:
         condition: service_healthy  
       redis:
         condition: service_healthy
-    
+  
+
   redis:
     image: redis:latest
     volumes:
@@ -74,6 +75,13 @@ services:
       - $PWD/site:/srv
       - caddy_data:/data
       - caddy_config:/config
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "16686:16686" # Jaeger UI
+      - "4317:4317"   # OTLP gRPC endpoint
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
 
 volumes:
     caddy_data:

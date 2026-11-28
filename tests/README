@@ -2,3 +2,6 @@
 The Test Suite are made so that after every test, the database is in clean slate
 
 Warning: all repository bulk methods aren't tested yet
+
+No parameter testing (or no 400 Bad Request)
+No request json validation on post routes

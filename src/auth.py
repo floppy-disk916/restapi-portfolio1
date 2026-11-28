@@ -85,17 +85,19 @@ async def check_current_token(
     return admin
 
 
+from sqlalchemy.orm import selectinload
+
 async def check_api_key(
     session: ASesDep,
     key: Annotated[str, Depends(api_key_scheme)],
-) -> str:
-    key_db = await session.scalar(select(APIKey).where(APIKey.key == key))
+) -> Admin:
+    
+    admin = await session.scalar(select(Admin).where(Admin.api_keys.any(APIKey.key == key)).options(selectinload(Admin.api_keys)))
 
-    if not key_db:
-        raise HTTPException(status_code=401, detail="Invalid api key")
-    if datetime.now(UTC) >= key_db.expire_date:
-        raise HTTPException(status_code=401, detail="Expired api key")
-    return key
+    if not admin:
+        raise HTTPException(status_code=404, detail="Admin not found")
+
+    return admin
 
 
 async def create_token(username: str, expire_min: timedelta) -> str:
@@ -107,7 +109,6 @@ async def create_token(username: str, expire_min: timedelta) -> str:
     payload = {"sub": username, "exp": expire}
     token = jwt.encode(payload, JWT_PRIVATE_KEY, algorithm=JWT_ENCODE)
     return token
-
 
 @router.post("/login")
 async def login(
@@ -122,3 +123,11 @@ async def login(
     access_token = await create_token(form_data.username, expire_min)
     token = Token(access_token=access_token, token_type="bearer")
     return token
+
+@router.post("/revoke", include_in_schema=False)
+async def revoke_token(
+    session: ASesDep,
+    request: Request,
+    admin: Annotated[Admin, Depends(check_current_token)]
+):
+    pass

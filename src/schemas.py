@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from uuid import UUID
-
 from pydantic import BaseModel, Field
+
+from datetime import datetime
 
 from .models import RoleEnum
 
@@ -11,14 +12,14 @@ class StaffAdd(BaseModel):
     name: str
     age: int = Field(ge=18)
     role: RoleEnum
-    avg_wage: float = Field(ge=0)
+    monthly_wage: float = Field(ge=0)
 
 
 class StaffUpdate(BaseModel):
     name: str | None = None
-    age: int | None = None
+    age: int | None = Field(default=None, ge=18)
     role: RoleEnum | None = None
-    avg_wage: float | None = None
+    monthly_wage: float | None = Field(default=None, ge=0)
 
 
 class StaffPublic(BaseModel):
@@ -26,7 +27,7 @@ class StaffPublic(BaseModel):
     name: str
     age: int
     role: RoleEnum
-    avg_wage: float
+    monthly_wage: float
 
 
 class ItemPublic(BaseModel):
@@ -39,19 +40,19 @@ class ItemPublic(BaseModel):
 
 
 class ItemAdd(BaseModel):
-    name: str
+    name: str = Field(min_length=1,max_length=20)
     tags: list[str]
-    description: str
+    description: str = Field(min_length=1, max_length=100)
     price: float = Field(ge=0)
     tax: float = Field(ge=0)
 
 
 class ItemUpdate(BaseModel):
-    name: str | None = None
+    name: str | None = Field(default=None, min_length=1,max_length=20)
     tags: list[str] | None = None
-    description: str | None = None
-    price: float | None = None
-    tax: float | None = None
+    description: str | None = Field(default=None, min_length=1, max_length=100)
+    price: float | None = Field(default=None, ge=0)
+    tax: float | None = Field(default=None, ge=0)
 
 
 class Token(BaseModel):
@@ -61,9 +62,9 @@ class Token(BaseModel):
 
 class AdminPublic(BaseModel):
     id: int
-    staff_id: UUID
-    name: str = Field(min_length=10, max_length=20)
-
+    staff_id: UUID | None
+    email: str = Field(min_length=1, max_length=25)
+    name: str = Field(min_length=1, max_length=20)
 
 class AdminForm(BaseModel):
     email: str
@@ -73,3 +74,10 @@ class AdminForm(BaseModel):
 
 class AdminAdd(AdminForm):
     pass
+
+class APIKeyPublic(BaseModel):
+    expire_time: datetime
+    admin_id: int
+
+class APIKeyAdd(BaseModel):
+    admin_id: int

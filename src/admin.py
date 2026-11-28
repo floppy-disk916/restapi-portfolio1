@@ -1,34 +1,26 @@
-import secrets
-import string
-from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
 from fastapi import APIRouter, Form, Request
 from fastapi.templating import Jinja2Templates
 
-from .auth import hash_password
-from .config import settings
+from .auth import hash_password, check_api_key
 from .db import ASesDep
 from .models import Admin, APIKey
 from .repository import get_async_repo
-from .schemas import AdminForm
+from .schemas import AdminForm, AdminAdd, APIKeyAdd
 
 router = APIRouter(prefix="/admin", include_in_schema=False)
 templates = Jinja2Templates(directory="./src/templates")
-
-
-@router.get("/")
-async def main_page(request: Request):
-    return templates.TemplateResponse(request=request, name="admin.html")
 
 
 AdminRepo = get_async_repo(Admin, Admin, child_model="api_key")
 APIKeyRepo = get_async_repo(APIKey, APIKey, child_model="admin")
 
 
-def generate_api_key(length: int = 32) -> str:
-    alphabets = string.ascii_letters + string.digits
-    return "".join(secrets.choice(alphabets) for _ in range(length))
+@router.get("/")
+async def main_page(request: Request):
+    return templates.TemplateResponse(request=request, name="admin.html")
+
 
 
 @router.post("/register")
@@ -37,48 +29,28 @@ async def get_api_key(
     data: Annotated[AdminForm, Form()],
 ) -> str:
 
-    data.password = hash_password(data.password)
-
-    key: str = generate_api_key()
-
-    expire_date = datetime.now(UTC) + timedelta(days=settings.api_key_expire_day)
-    if not settings.api_key_expire_day:
-        expire_date = datetime.now(UTC) + timedelta(days=30)
+    admin_data = AdminAdd.model_validate(data.model_dump())
 
     admin = await AdminRepo.create_one(
         session=session,
-        data=data,
+        data=admin_data,
     )
 
-    api_key = APIKey(
+    api_key_data = APIKeyAdd(
         admin_id=admin.id,
-        expire_date=expire_date,
-        key=key,
     )
 
-    await APIKeyRepo.create_one(
+    api_key = await APIKeyRepo.create_one(
         session=session,
-        data=api_key,
+        data=api_key_data,
     )
 
-    return key
 
-
-"""
-@router.post("/register")
-async def get_api_key(
-    data: Annotated[AdminForm, Form()],
-    ) -> str:
-    
-
+    return api_key.key
 
 @router.get("/me")
 async def get_current_admin(
     session: ASesDep,
-    admin: Annotated[Admin, Depends(check_current_token),
-    ):
-
-@router.put()
-@router.patch()
-@router.delete()
-"""
+    admin: Annotated[Admin, Depends(check_api_key)],
+    ) -> AdminPublic:
+        return AdminPublic.model_validate(admin)

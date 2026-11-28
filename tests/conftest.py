@@ -15,7 +15,7 @@ from src.config import settings
 
 from src.main import app
 
-global_fixture = pytest_asyncio.fixture(scope="module", loop_scope="module")
+global_fixture = pytest_asyncio.fixture(scope="module")
 
 
 @global_fixture
@@ -28,7 +28,7 @@ async def test_app():
     yield app
     app.dependency_overrides.clear()
 
-@pytest_asyncio.fixture(scope="function")
+@pytest_asyncio.fixture(scope="module", autouse=True)
 async def unauth_client(test_app):
     """
         Setting up test client with temporary mock database environment.
@@ -47,8 +47,8 @@ async def unauth_client(test_app):
     await insert_test_admin()
     async with AsyncClient(transport=transport,base_url=_base_url) as c:
         yield c
-    await delete_test_admin()
     
+    await delete_test_admin()
     await destroy_db()
 
 @pytest_asyncio.fixture(scope="function")
@@ -64,18 +64,18 @@ async def auth_token(unauth_client):
     json_data = response.json()
     access_token = json_data.get("access_token")
 
-    return access_token
+    return {"Authorization": f"Bearer {access_token} "}
 
-@pytest_asyncio.fixture(scope="function")
+@pytest_asyncio.fixture(scope="module")
 async def auth_api_key(unauth_client):
     data = {
         "name": "admin",
         "password": "admin",
         "email": "admin@mail.com",
     }
-    
+
     response = await unauth_client.post("/admin/register", data=data)
     
-    breakpoint()
-    return response.json
+    
+    return {"X-API-Key":f"{response.json()}"}
 

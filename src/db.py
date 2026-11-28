@@ -4,7 +4,7 @@ from collections.abc import AsyncGenerator
 from typing import Annotated
 
 from fastapi import Depends
-from sqlalchemy import delete, insert, select
+from sqlalchemy import exists, delete, insert, select
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
     async_sessionmaker,
@@ -12,14 +12,14 @@ from sqlalchemy.ext.asyncio import (
 )
 
 from .config import settings
-from .models import Admin, Base
+from .models import Admin, APIKey, Base, Staff, Item
 
 dsn = str(settings.db_dsn)
 
 # Enable echo and echo_pool for debugging. Default to development mode
-is_echo: bool = True
-if settings.mode == "prod":
-    is_echo = False
+is_echo: bool = False
+if settings.mode == "dev":
+    is_echo = True
 
 # See the documentation for available options
 isolation = "READ COMMITTED"
@@ -45,9 +45,51 @@ async def init_db():
 
 async def destroy_db():
     async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.reflect)
         await conn.run_sync(Base.metadata.drop_all)
 
-async def insert_test_admin():
+async def seed_test_staff():
+    async with engine.begin() as conn:
+        
+        subquery = select(Staff).where(
+            Staff.name == "test",
+            Staff.role == "staff",
+            Staff.age == 18,
+            Staff.monthly_wage == 0,
+            )
+
+        await conn.execute(
+            insert(Staff).values(
+                name = "test",
+                role = "staff",
+                age = 18,
+                monthly_wage = 0,
+            )
+        )
+
+async def seed_test_item():
+    async with engine.begin() as conn:
+        
+        item = await conn.scalar(
+            select(Item).where(
+                Item.name=="test",
+                Item.price==1,
+                Item.tax==0,
+                Item.description=="a test item",
+            ))
+
+        if item is None:
+            await conn.execute(
+                insert(Item).values(
+                name="test",
+                price=1,
+                tax=0,
+                tags=["test"],
+                description="a test item",
+            ))
+
+
+async def seed_test_admin():
     async with engine.begin() as conn:
         
         admin = await conn.scalar(
@@ -70,17 +112,50 @@ async def delete_test_admin():
     async with engine.begin() as conn:
 
         admin = await conn.scalar(
-            select(Admin).where(
-                Admin.name == "admin",
-            ),
+            select(Admin).where(Admin.name == "admin"),
+        )
+        
+        api_key = await conn.scalar(
+            select(APIKey).where(
+                APIKey.admin_id == admin,
+            )
         )
 
         if admin is not None:
             await conn.execute(
                 delete(Admin).where(
-                Admin.name == "admin",
-                ),
+                    Admin.name == "admin",
+                )
             )
+
+async def delete_test_staff():
+    async with engine.begin() as conn:
+
+        staff = await conn.scalar(
+            select(Staff).where(Staff.name == "test"),
+        )
+
+        if staff is not None:
+            await conn.execute(
+                delete(Staff).where(
+                    Staff.name == "test",
+                )
+            )
+
+async def delete_test_item():
+    async with engine.begin() as conn:
+
+        item = await conn.scalar(
+            select(Item).where(Item.name == "test"),
+        )
+       
+        if item is not None:
+            await conn.execute(
+                delete(Item).where(
+                    Item.name == "test",
+                )
+            )
+
 
 async_session = async_sessionmaker(bind=engine, expire_on_commit=False)
 

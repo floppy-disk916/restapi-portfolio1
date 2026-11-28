@@ -11,8 +11,6 @@ from pydantic import (
 )
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-# Application mode
-app_mode = "dev"
 
 
 class Settings(BaseSettings):
@@ -24,12 +22,12 @@ class Settings(BaseSettings):
         "identifier": "MIT",
     }
 
-    mode: Literal["prod", "dev"] = "dev"
+    mode: Literal["prod", "dev", "test"] = Field(default="dev", alias="MODE")
     openapi_url: str = Field(default="/openapi.json", alias="OPENAPI_URL")
 
     db_dsn: PostgresDsn | None = Field(alias="DATABASE_URL")
-    db_pool_size: int = Field(ge=10, default=10)
-    db_burst_tolerance: int = Field(default=15)
+    db_pool_size: int = Field(ge=10, default=10, alias="DB_POOL_SIZE")
+    db_burst_tolerance: int = Field(default=15, alias="DB_BURST_TOLERANCE")
 
     redis_dsn: RedisDsn | None = Field(default=None, alias="REDIS_URL")
 

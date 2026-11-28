@@ -10,11 +10,16 @@ dependencies = [
     "alembic-postgresql-enum>=1.11.1",
     "asyncpg>=0.32.0",
     "celery>=5.6.3",
-    "drogue[fastapi]>=0.4.1",
     "fastapi[standard]>=0.128.8",
     "greenlet>=3.2.5",
     "httpx>=0.28.1",
     "locust>=2.46.0",
+    "opentelemetry-api>=1.45.2",
+    "opentelemetry-distro>=0.66b2",
+    "opentelemetry-exporter-otlp>=1.45.2",
+    "opentelemetry-instrumentation-fastapi>=0.66b2",
+    "opentelemetry-instrumentation-sqlalchemy>=0.66b2",
+    "opentelemetry-sdk>=1.45.2",
     "psycopg[binary]>=3.2.13",
     "pwdlib[argon2]>=0.2.1",
     "pyjwt[crypto]>=2.15.1",
@@ -22,6 +27,7 @@ dependencies = [
     "pytest-asyncio>=1.2.0",
     "redis[hiredis]>=7.0.1",
     "slowapi>=0.1.10",
+    "sqlalchemy<=2.1.0",
     "sqlmodel>=0.0.34",
     "throttled-py>=2.2.3",
 ]
@@ -35,7 +41,9 @@ addopts = ["-ra", "-q"]
 testpaths = [
     "tests",
 ]
-asyncio_default_fixture_loop_scope = "module"
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
 
 [tool.alembic]
 

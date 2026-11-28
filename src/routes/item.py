@@ -6,6 +6,7 @@ from fastapi import (
     HTTPException,
     status,
 )
+from pydantic import ValidationError
 
 from ..auth import check_current_token
 from ..db import ASesDep
@@ -45,6 +46,11 @@ async def partial_update_item(
 
 @router.put("/")
 async def update_item(item: ItemUpdate, name: str, session: ASesDep) -> ItemPublic:
+    try:
+        item_data = Item.model_validate(item.model_dump())
+    except ValidationError:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
+    
     return await Repo.update_one_by_id(session=session, data=item, _id=name, col="name")
 
 
@@ -54,4 +60,5 @@ async def delete_item(
     session: ASesDep,
     admin: Annotated[Admin, Depends(check_current_token)],
 ):
-    return await Repo.remove_one_by_id(session=session, _id=name, col="name")
+    await Repo.remove_one_by_id(session=session, _id=name, col="name")
+    return
