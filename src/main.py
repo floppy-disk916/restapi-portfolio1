@@ -220,4 +220,6 @@ app.include_router(main_router)
 app.include_router(auth_router)
 
 setup_tracing(app, engine=engine)
-register_exception_handlers(app)
+
+if settings.tracing_enabled == "true":
+    register_exception_handlers(app)

@@ -25,6 +25,8 @@ class Settings(BaseSettings):
     mode: Literal["prod", "dev", "test"] = Field(default="dev", alias="MODE")
     openapi_url: str = Field(default="/openapi.json", alias="OPENAPI_URL")
 
+    tracing_enabled: Literal["true", "false"] = Field(default="false", alias="TRACING_ENABLED")
+
     db_dsn: PostgresDsn | None = Field(alias="DATABASE_URL")
     db_pool_size: int = Field(ge=10, default=10, alias="DB_POOL_SIZE")
     db_burst_tolerance: int = Field(default=15, alias="DB_BURST_TOLERANCE")

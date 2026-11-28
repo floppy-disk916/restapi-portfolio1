@@ -7,6 +7,7 @@ from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
+
 def setup_tracing(app, engine=None):
     # 1. Create a resource to identify your service
     resource = Resource.create(attributes={"service.name": "restapi-portfolio1"})
