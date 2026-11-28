@@ -48,7 +48,7 @@ Connection age: 3600s
 
 P95 highest spike is between 30s to 35s
 while its P50 highest spike is between 0s to 5s,
-when the number of users is 394
+starting at 394 users
 
 ![The locust documentation image](images/Locust-Screenshot.png)
 
