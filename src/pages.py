@@ -2,7 +2,7 @@ from fastapi import FastAPI, Request, APIRouter, Depends
 from fastapi.templating import Jinja2Templates
 
 router = APIRouter()
-templates = Jinja2Templates(directory="templates")
+templates = Jinja2Templates(directory="./src/templates")
 
 @router.get("/")
 async def home(request: Request):

@@ -182,6 +182,7 @@ app.add_middleware(SlowAPIASGIMiddleware)
 template = Jinja2Templates(directory="./src/templates")
 
 
+#MOVE ME
 @app.get("/", include_in_schema=False)
 async def main(request: Request):
     return template.TemplateResponse(

@@ -33,8 +33,10 @@
     </div>
 
     <div class="py-8 bg-primary container-fluid text-white">
+        {% block header%}
         <h1>{{ app_title }}</h1>
         <p>{{ app_description }}</p>
+        {% endblock %}
     </div>
     
     <main class="container m-10">

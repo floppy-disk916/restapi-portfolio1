@@ -6,11 +6,22 @@
 {% endblock %}
 
 {% block content %}
-<p>A web API to simulate warehouse management</p>
+<p>A web API to simulate warehouse management.<br/>
+It is still under development</p>
+<p>Available routes:</p>
+<ul>
+    <li>Staff</li>
+    <li>Item</li>
+</ul>
+
 <h2>Example</h2>
-<p><strong>Don't fill any of your private information here!!!</strong>
+<p>
+Warning: <strong>Don't fill any of your private information here!!!</strong>
+<br>
+</p>
+
+<p>GET example</p>
 <code>
     curl --get https://restapi-portfolio1.onrender.com/api/v1/item -d "name=chips"
 </code>
-</p>
 {% endblock %}
