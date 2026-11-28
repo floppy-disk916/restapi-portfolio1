@@ -17,6 +17,7 @@ from .tracing import setup_tracing
 from .admin import router as admin_router
 from .auth import router as auth_router
 from .config import settings
+from .pages import router as page_router
 from .db import (
     init_db,
     seed_test_staff,
@@ -218,8 +219,9 @@ if dist_path.exists():
 app.include_router(admin_router)
 app.include_router(main_router)
 app.include_router(auth_router)
+app.include_router(page_router)
 
 setup_tracing(app, engine=engine)
 
-if settings.tracing_enabled == "true":
+if settings.tracing_enabled == True:
     register_exception_handlers(app)

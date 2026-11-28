@@ -2,8 +2,11 @@ ISSUES.md
 TODO.md
 API_KEY.example
 WHAT_TO_LEARN.md
+GRAFANA_TOKEN
+DASHBOARD_STRUCTURE
 
 .docker.env
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
