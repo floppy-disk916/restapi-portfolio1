@@ -30,8 +30,11 @@ It has been tested with locust and viewed with Jaeger (The Jaeger setup is from 
 The latest test: 11/28/2026
 
 Environment:
-connection pool size: 20
+Connection pool size: 20
+Maximum overflow: 30
+Total pool: 50
 
+Connection age: 3600s
 
 ### Description:
 

@@ -28,6 +28,7 @@ class Settings(BaseSettings):
     db_dsn: PostgresDsn | None = Field(alias="DATABASE_URL")
     db_pool_size: int = Field(ge=10, default=10, alias="DB_POOL_SIZE")
     db_burst_tolerance: int = Field(default=15, alias="DB_BURST_TOLERANCE")
+    connection_age: int = Field(default=3600, alias="CONNECTION_AGE")
 
     redis_dsn: RedisDsn | None = Field(default=None, alias="REDIS_URL")
 

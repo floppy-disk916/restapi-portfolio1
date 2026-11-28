@@ -25,7 +25,7 @@ if settings.mode == "dev":
 isolation = "READ COMMITTED"
 
 # Per connection age. For pool_recycle
-per_connection_age = 3600
+per_connection_age = settings.connection_age
 
 engine = create_async_engine(
     dsn,
