@@ -3,6 +3,8 @@ TODO.md
 API_KEY.example
 WHAT_TO_LEARN.md
 
+.docker.env
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
