@@ -7,8 +7,10 @@ A FastAPI REST API portfolio project with API key header authentication.
 - FastAPI with API key header authentication
 - SQLAlchemy + PostgreSQL
 - Alembic migrations
-- Redis
-- Docker Compose + Caddy (reverse proxy)
+- Docker Compose + Caddy (reverse proxy, setup by AI)
+- SlowAPI with Redis as rate limiter
+- Locust load testing framework
+- Jaeger in docker container
 
 ## How to run
 
