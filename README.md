@@ -34,7 +34,7 @@ The latest test: 11/28/2026
 Environment:\
 Connection pool size: 20\
 Maximum overflow: 30\
-Total pool: 50\
+Total pool: 50
 
 Connection age: 3600s
 
