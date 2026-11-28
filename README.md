@@ -9,11 +9,11 @@ admin account registration for m2m connection
 
 ## Technologies
 
-- DeepSeek AI
+- DeepSeek AI as secondary and reviewer
 - FastAPI with API key header authentication
 - SQLAlchemy + PostgreSQL
 - Alembic migrations
-- Docker Compose + Caddy (reverse proxy, setup by AI)
+- Docker Compose + Caddy
 - SlowAPI with Redis as rate limiter
 - Locust load testing framework
 - Jaeger in docker container
@@ -33,7 +33,7 @@ docker compose up --build --detach
 ## Performance
 
 
-It has been tested with locust and viewed with Jaeger (The Jaeger setup is from deepseek AI)
+It has been tested with locust and viewed with Jaeger (by AI)
 
 The latest test: 11/28/2026
 
